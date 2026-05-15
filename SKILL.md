@@ -282,8 +282,9 @@ Template sources: NNTikZ (70*, MIT), PetarV-/TikZ (1.4K*, MIT), janosh/diagrams 
 **When to use template vs layout engine:**
 Canonical architectures (Transformer, LSTM, CNN, GAN, VAE, etc.) → match template by keyword, customize colors/text. Custom pipeline/novel architecture → layout-engine.py with JSON spec.
 
-Quality tools (all based on shared `references/tikz_parser.py`):
-- `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)
+Core tools (all based on shared `references/tikz_parser.py`):
+- `references/layout-engine.py` — JSON spec → `.tex` generator (auto-run step 3)
+- `references/tikz-validator.py` — pre-compile 11 checks (auto-run step 4)
 - `references/pdf-overlap-checker.py` — post-compile PDF overlap (auto-run step 6)
 - `references/figure-diff.py` — SSIM comparison, triggered if reference image provided (step 6)
 
