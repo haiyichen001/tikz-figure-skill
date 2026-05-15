@@ -16,14 +16,28 @@ A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with bu
 
 ## Install
 
+**Primary: git clone (recommended)**
 ```bash
-mkdir -p .claude/skills/tikz-figure-skill
-cp SKILL.md .claude/skills/tikz-figure-skill/
-cp -r references/ .claude/skills/tikz-figure-skill/
-cp -r scripts/ .claude/skills/tikz-figure-skill/
+git clone https://github.com/haiyichen001/tikz-figure-skill.git \
+  ~/.claude/skills/tikz-figure-skill
+```
+```powershell
+git clone https://github.com/haiyichen001/tikz-figure-skill.git `
+  $env:USERPROFILE\.claude\skills\tikz-figure-skill
 ```
 
-Optional: run `python scripts/check-env.py` to verify dependencies.
+**Alternative: run install script after cloning**
+```bash
+./install.sh       # macOS/Linux
+.\install.ps1      # Windows PowerShell
+```
+
+**Update**
+```bash
+cd ~/.claude/skills/tikz-figure-skill && git pull
+```
+
+Restart Claude Code. `/tikz-figure-skill` is ready.
 
 ## Quick Start
 
