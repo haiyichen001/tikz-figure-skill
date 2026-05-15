@@ -1,39 +1,39 @@
 #!/usr/bin/env python3
 r"""
-TikZ Layout Engine — graphdrawing mode.
-AI defines nodes and edges in a JSON spec. LuaLaTeX computes all positions
-and routes edges at compile time via Sugiyama layered layout algorithm.
-No manual coordinates. No overlap. No edge-crossing-boxes.
+TikZ Layout Engine v3 — compute-then-render pipeline.
+
+Phase 1 (Python): estimate text sizes → stack nodes → assign (x,y)
+Phase 2 (LaTeX):  output \node at (x,y) + orthogonal \draw -| edges
+
+AI writes zero coordinates. Engine does all the math.
+Output: professional orthogonal edges with rounded corners.
 
 Usage:
   python layout-engine.py spec.json --output file.tex
   python layout-engine.py spec.json --compile
 
-Spec format:
+Spec:
 {
-  "canvas": {"border": 15},
-  "title": {"text": "Figure Title", "subtitle": "Subtitle line"},
-  "styles": {
-    "my_style": {
-      "font": "footnotesize/sffamily", "fill": "acaBlueFill", "draw": "acaBlueLine",
-      "inner_sep": 6, "rounded": 3
-    }
-  },
-  "nodes": [
-    {"id": "a", "text": "Node A", "style": "my_style", "layer": 0},
-    {"id": "b", "text": "Node B", "style": "my_style", "layer": 1}
+  "title": {"text": "...", "subtitle": "..."},
+  "layout": {"column_gap": 3.5, "row_gap": 0.35, "rail_pad": 1.2},
+  "styles": {"my": {"font":"footnotesize/sffamily","fill":"acaBlueFill","draw":"acaBlueLine","inner_sep":8,"rounded":4}},
+  "groups": [
+    {"x": 1.5, "label": "Timeline", "nodes": [{"id":"a","text":"Node","style":"my"}]},
+    {"x": 10.0, "label": "Main", "nodes": [{"id":"b","text":"Node","style":"my"}]}
   ],
   "edges": [
-    {"from": "a", "to": "b"},
-    {"from": "a", "to": "c", "style": "dashed,red!50", "label": "skip"}
-  ]
+    {"from":"a","to":"b","type":"main"},
+    {"from":"c","to":"d","type":"feedback"}
+  ],
+  "edge_types": {
+    "main":     "thick,acaOrangeLine,rounded corners=6pt",
+    "flow":     "thick,black!55,rounded corners=4pt",
+    "feedback": "dashed,acaRedLine!60,rounded corners=6pt"
+  }
 }
 """
 
-import json
-import sys
-import os
-import subprocess
+import json, sys, os, re, subprocess
 
 ACADEMIC_COLORS = r"""\definecolor{acaBlueLine}{HTML}{6080B0}
 \definecolor{acaBlueFill}{HTML}{DBEAFE}
@@ -48,147 +48,266 @@ ACADEMIC_COLORS = r"""\definecolor{acaBlueLine}{HTML}{6080B0}
 \definecolor{acaGreyLine}{HTML}{666666}
 \definecolor{acaGreyFill}{HTML}{F5F5F5}"""
 
+TIKZ_RESERVED = {"out","in","to","edge","node","graph","draw","fill",
+    "path","scope","pic","label","pin","alias","matrix",
+    "align","text","font","anchor","scale","rotate","x","y",
+    "at","name","shape","inner","outer","minimum","maximum"}
 
-def generate(spec: dict) -> str:
-    border = spec.get("canvas", {}).get("border", 15)
-    styles = spec.get("styles", {})
-    nodes = spec.get("nodes", [])
-    edges = spec.get("edges", [])
-    title = spec.get("title")
-    lines = []
+FONT_W = {"tiny":0.08,"scriptsize":0.10,"footnotesize":0.12,
+          "small":0.15,"normalsize":0.18,"large":0.22,"Large":0.26}
+LINE_H = 0.22  # cm per line
+INNER_SEP_CM = 0.035  # per pt, approximate
 
-    # Preamble
-    lines.append(r"\documentclass[tikz,border=" + str(border) + r"pt]{standalone}")
-    lines.append(r"\usepackage{tikz}")
-    lines.append(r"\usepackage{amsmath,amssymb}")
-    lines.append(r"\usetikzlibrary{graphs,graphdrawing,arrows.meta,bbox}")
-    lines.append(r"\usegdlibrary{layered,force}")
-    lines.append("")
-    lines.append(ACADEMIC_COLORS)
-    lines.append("")
-    lines.append(r"\begin{document}")
-    lines.append(r"\begin{tikzpicture}[arr/.style={->,>=Stealth,thick,color=black!55}]")
-
-    # Title inside tikzpicture
-    if title:
-        lines.append(r"\node[font=\Large\bfseries\sffamily,align=center] at (10,3) {"
-                     + title["text"] + r"};")
-        if title.get("subtitle"):
-            lines.append(r"\node[font=\normalsize\sffamily,color=acaGreyLine] at (10,2.3) {"
-                         + title["subtitle"] + r"};")
-
-    # Style definitions
-    # TikZ reserved keys that conflict with style names
-    TIKZ_RESERVED = {"out", "in", "to", "edge", "node", "graph", "draw", "fill",
-                     "path", "scope", "pic", "label", "pin", "alias", "matrix",
-                     "align", "text", "font", "anchor", "scale", "rotate", "x", "y",
-                     "at", "name", "shape", "inner", "outer", "minimum", "maximum"}
-    lines.append(r"\tikzset{")
+def make_style_defs(styles):
+    lines = [r"\tikzset{"]
     for sname, sdef in styles.items():
-        if sname in TIKZ_RESERVED:
-            sname = "s_" + sname  # prefix to avoid collision
-        fill = sdef.get("fill", "white")
-        draw = sdef.get("draw", "black")
-        rounded = sdef.get("rounded", 3)
-        font = sdef.get("font", "footnotesize/sffamily")
-        inner = sdef.get("inner_sep", 6)
-        font_cmd = "\\" + font.replace("/", "\\")
-        lines.append(f"  {sname}/.style={{rectangle,rounded corners={rounded}pt,"
+        safe = f"s_{sname}" if sname in TIKZ_RESERVED else sname
+        fill = sdef.get("fill","white"); draw = sdef.get("draw","black")
+        rounded = sdef.get("rounded",3); inner = sdef.get("inner_sep",6)
+        font = sdef.get("font","footnotesize/sffamily")
+        font_cmd = "\\" + font.replace("/","\\")
+        lines.append(f"  {safe}/.style={{rectangle,rounded corners={rounded}pt,"
                      f"align=center,font={font_cmd},inner sep={inner}pt,"
                      f"fill={fill},draw={draw}}},")
     lines.append("}")
+    return "\n".join(lines)
 
-    # Graph
-    lines.append(r"\graph[")
-    lines.append(r"  layered layout,")
-    lines.append(r"  grow=right,")
-    lines.append(r"  level distance=2.8cm,")
-    lines.append(r"  sibling distance=1.0cm,")
-    lines.append(r"  nodes={align=center,inner sep=6pt,font=\footnotesize\sffamily},")
-    lines.append(r"  edges={arr},")
-    lines.append(r"] {")
+def safe_style(name):
+    return f"s_{name}" if name in TIKZ_RESERVED else name
 
-    # Group nodes by layer
-    layers = {}
-    for n in nodes:
-        layer = n.get("layer", 0)
-        if layer not in layers:
-            layers[layer] = []
-        layers[layer].append(n)
+def est_text_dims(text, font_str):
+    """Estimate rendered text width and height in cm."""
+    parts = font_str.split("/")
+    size = "footnotesize"
+    bold = any(p in font_str for p in ["bf","bfseries"])
+    for p in parts:
+        if p in FONT_W:
+            size = p; break
+    cw = FONT_W.get(size, 0.12) * (1.10 if bold else 1.0)
+    lines = text.replace("|","\n").split("\n")
+    max_w = 0
+    for line in lines:
+        clean = re.sub(r'\$[^$]*\$','XXX',line)  # math as 3 chars
+        clean = re.sub(r'\\[a-zA-Z]+(\{[^}]*\})*','',clean)
+        clean = re.sub(r'[{}]','',clean)
+        max_w = max(max_w, len(clean) * cw)
+    return max_w, len(lines) * LINE_H
 
-    for layer_idx in sorted(layers.keys()):
-        layer_nodes = layers[layer_idx]
-        ids = []
-        for n in layer_nodes:
-            # Convert | to LaTeX line break \\, escape special chars
-            txt = n["text"].replace("|", r"\\")
-            # Protect # and unbalanced braces
-            txt = txt.replace("#", "\\#")
-            st = n["style"]
-            if st in TIKZ_RESERVED:
-                st = "s_" + st
-            ids.append(f'{n["id"]}/"{txt}" [{st}]')
-        lines.append("  " + ", ".join(ids) + ";")
+def compute_layout(spec):
+    """Phase 1: compute absolute (x,y) for every node."""
+    groups = spec.get("groups",[])
+    styles = spec.get("styles",{})
+    cfg = spec.get("layout",{})
+    col_gap = cfg.get("column_gap",3.8)
+    row_gap = cfg.get("row_gap",0.3)
+    all_nodes = []
+    x_positions = {}
+    col_extents = {}  # col_idx -> (x, max_width, y_min, y_max)
 
-    # Edges
+    for gi, grp in enumerate(groups):
+        gx = grp["x"]
+        col_nodes = grp.get("nodes",[])
+        max_w = 0
+        positioned = []
+        prev_y = None
+        prev_h = 0
+
+        for ns in col_nodes:
+            nid = ns["id"]; text = ns.get("text","")
+            st_name = ns.get("style","default")
+            st = styles.get(st_name,{})
+            font = st.get("font","footnotesize/sffamily")
+            inner = st.get("inner_sep",6)
+            tw, th = est_text_dims(text, font)
+            pad = inner * INNER_SEP_CM
+            nw = tw + 2*pad + 0.2  # + safety margin
+            nh = th + 2*pad + 0.1
+            max_w = max(max_w, nw)
+
+            if prev_y is None:
+                ny = 0.0  # first node at y=0
+            else:
+                # stack below
+                ny = prev_y - prev_h/2 - row_gap - nh/2
+
+            positioned.append({"id":nid,"text":text,"style":st_name,
+                               "width":nw,"height":nh,"y":ny,
+                               "x":gx,"group":gi})
+            prev_y = ny; prev_h = nh
+
+        # Center nodes within column
+        for pn in positioned:
+            pn["x"] = gx
+
+        col_extents[gi] = {"x":gx, "max_w":max_w,
+                           "y_top":positioned[0]["y"]+positioned[0]["height"]/2 if positioned else 0,
+                           "y_bot":positioned[-1]["y"]-positioned[-1]["height"]/2 if positioned else 0}
+        all_nodes.extend(positioned)
+        x_positions[gi] = gx
+
+    # Compute rail positions (right side of all content, left side)
+    if all_nodes:
+        rightmost = max(n["x"]+n["width"]/2 for n in all_nodes)
+        leftmost  = min(n["x"]-n["width"]/2 for n in all_nodes)
+        rail_pad = cfg.get("rail_pad",1.5)
+        right_rail = rightmost + rail_pad
+        left_rail  = leftmost  - rail_pad
+    else:
+        right_rail, left_rail = 15, -1
+
+    meta = {"right_rail":right_rail, "left_rail":left_rail,
+            "column_gap":col_gap, "row_gap":row_gap,
+            "x_positions":x_positions, "col_extents":col_extents}
+    return all_nodes, meta
+
+def generate_tex(all_nodes, meta, spec):
+    """Phase 2: output .tex with absolute coords + orthogonal edges."""
+    border = spec.get("canvas",{}).get("border",15)
+    styles = spec.get("styles",{})
+    edges = spec.get("edges",[])
+    edge_types = spec.get("edge_types",{
+        "main":"thick,acaOrangeLine,rounded corners=6pt",
+        "flow":"thick,black!55,rounded corners=4pt",
+        "feedback":"dashed,acaRedLine!60,rounded corners=6pt"})
+    title = spec.get("title")
+    groups = spec.get("groups",[])
+    node_map = {n["id"]:n for n in all_nodes}
+    rail = meta["right_rail"]
+    left_rail = meta["left_rail"]
+    lines = []
+
+    # Preamble
+    lines.append(r"\documentclass[tikz,border="+str(border)+r"pt]{standalone}")
+    lines.append(r"\usepackage{tikz,amsmath,amssymb}")
+    lines.append(r"\usetikzlibrary{arrows.meta,backgrounds}")
+    lines.append("")
+    lines.append(ACADEMIC_COLORS)
+    lines.append(r"\pgfdeclarelayer{bg}")
+    lines.append(r"\pgfsetlayers{bg,main}")
+    lines.append("")
+    lines.append(r"\begin{document}")
+    lines.append(r"\begin{tikzpicture}[")
+    lines.append(r"  >={Stealth},line cap=round,")
+    lines.append(r"]")
+
+    # Title
+    cx = (meta["left_rail"]+rail)/2 if all_nodes else 10
+    if title:
+        lines.append(f"\\node[font=\\Large\\bfseries\\sffamily,align=center] at ({cx:.1f},1.5) {{{title['text']}}};")
+        if title.get("subtitle"):
+            lines.append(f"\\node[font=\\footnotesize\\sffamily,color=acaGreyLine] at ({cx:.1f},0.7) {{{title['subtitle']}}};")
+
+    # Style defs
+    lines.append(make_style_defs(styles))
+
+    # Nodes
+    lines.append("\n% === Nodes ===")
+    for n in all_nodes:
+        st = safe_style(n["style"])
+        txt = n["text"].replace("|","\\\\")
+        lines.append(f"\\node[{st}] ({n['id']}) at ({n['x']:.2f},{n['y']:.2f}) {{{txt}}};")
+
+    # Edges — orthogonal routing via rail
+    lines.append("\n% === Edges ===")
     for e in edges:
         fid, tid = e["from"], e["to"]
-        style = e.get("style", "")
-        label = e.get("label", "").replace("|", r"\\")
-        if label and style:
-            lines.append(f'  ({fid}) ->["{label}" {style}] ({tid});')
-        elif label:
-            lines.append(f'  ({fid}) ->["{label}"] ({tid});')
-        elif style:
-            lines.append(f'  ({fid}) ->[{style}] ({tid});')
-        else:
-            lines.append(f'  ({fid}) -> ({tid});')
+        etype = e.get("type","flow")
+        estyle = edge_types.get(etype, edge_types["flow"])
+        label = e.get("label","")
 
-    lines.append("};")
+        src = node_map.get(fid)
+        dst = node_map.get(tid)
+        if not src or not dst:
+            lines.append(f"% Edge {fid}->{tid}: node not found")
+            continue
+
+        sx, sy = src["x"], src["y"]
+        dx, dy = dst["x"], dst["y"]
+        sw, sh = src["width"], src["height"]
+        dw, dh = dst["width"], dst["height"]
+
+        # Determine routing
+        if abs(sx - dx) < 0.5:
+            # Same column: straight down
+            lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north)")
+            if label:
+                lines.append(f"  node[midway,right,font=\\tiny\\sffamily] {{{label}}};")
+            else:
+                lines.append(";")
+        elif sy > dy:
+            # Source below target (feedback/backward): route via right rail
+            mid_y = (sy + dy) / 2
+            lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({rail:.1f},{sy:.1f})")
+            lines.append(f"  -- ({rail:.1f},{mid_y:.1f}) -- ({rail:.1f},{dy:.1f}) -| ({tid}.east)")
+            if label:
+                lines.append(f"  node[pos=0.5,right,font=\\tiny\\sffamily] {{{label}}};")
+            else:
+                lines.append(";")
+        else:
+            # Source above target (forward flow): orthogonal L-shape
+            mid_y = (sy + dy) / 2
+            if abs(sx - dx) > 5:
+                # Far apart: go right → rail → rail → target
+                lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({rail:.1f},{mid_y:.1f}) |- ({tid}.west)")
+            else:
+                # Close together: simple horizontal-then-vertical
+                mx = (sx + sw/2 + dx - dw/2) / 2
+                lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({dx:.1f},{mid_y:.1f}) -| ({tid}.west)")
+            if label:
+                lines.append(f"  node[pos=0.5,above,font=\\tiny\\sffamily] {{{label}}};")
+            else:
+                lines.append(";")
+
+    # Zone backgrounds
+    if groups:
+        lines.append("\n% === Zones ===")
+        lines.append(r"\begin{pgfonlayer}{bg}")
+        zone_colors = ["acaBlueFill!15","acaGreenFill!15","acaPurpleFill!15",
+                       "acaOrangeFill!15","acaRedFill!15"]
+        for gi, grp in enumerate(groups):
+            col = meta["col_extents"].get(gi,{})
+            if not col: continue
+            zc = zone_colors[gi % len(zone_colors)]
+            x0 = col["x"] - col["max_w"]/2 - 0.5
+            x1 = col["x"] + col["max_w"]/2 + 0.5
+            y0 = col["y_bot"] - 0.4
+            y1 = col["y_top"] + 0.4
+            lines.append(f"  \\fill[{zc},rounded corners=6pt] ({x0:.1f},{y0:.1f}) rectangle ({x1:.1f},{y1:.1f});")
+            # Zone label
+            label = grp.get("label","")
+            if label:
+                lines.append(f"  \\node[font=\\tiny\\sffamily\\bfseries,acaGreyLine] at ({x0+0.5:.1f},{y1-0.15:.1f}) {{{label}}};")
+        lines.append(r"\end{pgfonlayer}")
+
     lines.append(r"\end{tikzpicture}")
     lines.append(r"\end{document}")
     return "\n".join(lines)
 
+def generate(spec):
+    nodes, meta = compute_layout(spec)
+    return generate_tex(nodes, meta, spec)
 
 def main():
     if len(sys.argv) < 2:
         print("Usage: python layout-engine.py spec.json [--compile] [--output file.tex]")
         sys.exit(1)
-
-    with open(sys.argv[1], "r", encoding="utf-8") as f:
+    with open(sys.argv[1],"r",encoding="utf-8") as f:
         spec = json.load(f)
-
     tex = generate(spec)
-
     if "--output" in sys.argv:
         idx = sys.argv.index("--output")
-        out_tex = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else spec.get("output", "layout_output.tex")
+        out = sys.argv[idx+1] if idx+1<len(sys.argv) else spec.get("output","layout_output.tex")
     elif "--compile" in sys.argv:
-        out_tex = spec.get("output", "layout_output.tex")
+        out = spec.get("output","layout_output.tex")
     else:
-        print(tex)
-        return
-
-    with open(out_tex, "w", encoding="utf-8") as f:
+        print(tex); return
+    with open(out,"w",encoding="utf-8") as f:
         f.write(tex)
-    print(f"Wrote: {out_tex}", file=sys.stderr)
-
+    print(f"Wrote: {out}",file=sys.stderr)
     if "--compile" in sys.argv:
-        cwd = os.path.dirname(os.path.abspath(out_tex))
-        base = os.path.splitext(os.path.basename(out_tex))[0]
-        subprocess.run(["lualatex", "-interaction=nonstopmode", out_tex],
-                       check=True, timeout=120, cwd=cwd)
-        # Auto-crop with pdfcrop if available
-        pdf = os.path.join(cwd, base + ".pdf")
-        cropped = os.path.join(cwd, base + "_cropped.pdf")
-        try:
-            subprocess.run(["pdfcrop", pdf, cropped],
-                           check=True, timeout=30, cwd=cwd)
-            os.replace(cropped, pdf)
-            print("Compiled + cropped with lualatex", file=sys.stderr)
-        except Exception:
-            print("Compiled with lualatex (pdfcrop not available)", file=sys.stderr)
-
+        cwd = os.path.dirname(os.path.abspath(out))
+        subprocess.run(["lualatex","-interaction=nonstopmode",out],check=True,timeout=120,cwd=cwd)
+        print("Compiled",file=sys.stderr)
 
 if __name__ == "__main__":
     main()
