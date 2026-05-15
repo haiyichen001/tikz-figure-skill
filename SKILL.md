@@ -115,17 +115,39 @@ Step 6 — Recover: if compile/validation fails, diagnose root cause, fix, re-ru
 Deliver: .tex + .pdf + .png + QA report
 ```
 
-## Auto-Retry & Recovery
+## Auto-Retry & Recovery (AI-driven, not hardcoded)
 
-If compilation fails, the skill does NOT ask the user to fix it. Instead:
+Compile errors and validation warnings are handled by Claude intelligently:
 
+### Compile Error Recovery
 1. **Parse compiler log** — extract error line, missing package, undefined command
 2. **Diagnose category**: missing package, syntax error, font issue, incompatible engine
 3. **Apply fix**: install package (`tlmgr install`), switch engine (pdflatex→lualatex), fix syntax
 4. **Re-compile** — max 3 attempts per error category
 5. **Escalate** — if 3 attempts fail, report exact error + attempted fixes to user
 
-If collision validation fails, iterate on node grouping and edge structure up to 3 rounds, then report remaining warnings.
+### Validation Auto-Fix Loop (crucial)
+
+After generating .tex, YOU MUST run the validator and act on its output:
+
+```bash
+python references/tikz-validator.py output.tex
+```
+
+Read the validator output carefully. **Do not ignore warnings.** For each warning:
+
+| Warning Type | What Claude Should Do |
+|---|---|
+| `short-arrow` / `collision` / `tight-clearance` | Increase `row_gap` or `column_gap` in the JSON spec, or adjust node `x` positions in `groups`. Re-generate. |
+| `overflow` | Expand zone boundaries by adjusting group `x` spacing or increasing `column_gap`. |
+| `oversize` | Remove `minimum width`/`minimum height` from the style, or reduce to match text. |
+| `bezier-collision` / `line-crossing` | Re-route edges using `-|`/`|-` paths, or add intermediate rail nodes. |
+| `edge-clip` | Increase `canvas.border` or move nodes inward. |
+| `label-gap` | Shorten label text, move it above/below the edge, or widen the gap between source and target nodes. |
+
+**Loop**: generate → validate → read warnings → adjust spec → re-generate. Max 3 iterations. If warnings persist after 3 rounds, report them to the user but deliver the best version achieved.
+
+**Goal**: 0 errors, minimal warnings. This loop is what makes the skill "zero-collision" — it's Claude intelligently fixing issues the validator finds, not a hardcoded script.
 
 ## Design Philosophy
 
