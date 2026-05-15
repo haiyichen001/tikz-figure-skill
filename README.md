@@ -72,7 +72,7 @@ Agent Harness, and Solver Backend. Include feedback loops.
 | 5 | Heatmap matrix | Inline data table |
 | 6 | Box plot | Pre-computed quartiles |
 
-## Structure (13 references, 113 KB)
+## Structure (12 references, 101 KB)
 
 ```
 tikz-figure-skill/
@@ -82,13 +82,12 @@ tikz-figure-skill/
   references/
     design-philosophy.md            -- Core design principles + quality gates (4.6 KB)
     tikz-coding-rules.md            -- Mandatory TikZ conventions (3.1 KB)
-    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column (2.6 KB)
+    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column (5.7 KB)
     visual-patterns.md              -- 9 patterns + embedded viz + font rules (3.3 KB)
     collision-detection.md          -- Bezier formulas, clearance tables (3.6 KB)
     pgfplots-templates.md           -- 6 CSV-driven chart templates (9.1 KB)
     graphdrawing-guide.md           -- LuaLaTeX auto-layout guide (6.2 KB)
     geometry-math.md                -- Coordinate systems, formulas (4.7 KB)
-    sequence-diagram.md             -- Lifeline spacing, activation bars (12.4 KB)
     tikz-validator.py               -- Pre-compile 10-check validator (28.6 KB)
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector (17.8 KB)
     tikz-path-router.py             -- A* path planning (10.7 KB)

@@ -59,19 +59,57 @@ for total width ~18cm
 
 ## Sequence Diagram
 
-Trigger: "sequence", "interaction", "protocol flow", "时序", "交互"
+Trigger: "sequence", "interaction", "protocol flow", "时序", "交互", "UML"
 
-Rules:
-- Each participant is a vertical lifeline column
-- Participant header: rectangle with `\small\bfseries` name
-- Messages: horizontal arrows between lifelines, label `above` or `below`
-- Activation bars: narrow rectangles on lifelines during active period
-- Time flows top-to-bottom
-- Return/dashed arrows for responses
+### Layout
+- Participants: absolute x coordinates, gap 5-6cm. 4 participants max width 17cm.
+- Font: `\small\bfseries` for headers, `\footnotesize` for messages. **No `\scriptsize`** — sequence diagrams are tall.
+- Vertical: intra-phase message gap 0.5-0.6cm, inter-phase gap 0.8-1.0cm. Total height 17-20cm (<=6 phases).
+- Message label color: unified `black!80`. Only critical failures use red. Arrow color matches sender.
 
-Spacing:
+### Style Definitions
+```latex
+participant/.style={rectangle,rounded corners=4pt,align=center,
+    minimum height=1.1cm,minimum width=2.8cm,drop shadow={opacity=0.15},thick,font=\small\bfseries},
+activation/.style={fill=#1!30,draw=#1!80,thick,rounded corners=1pt,minimum width=0.45cm},
+lifeline/.style={dashed,thick,color=#1!80},  % >=!80 visibility on light bg
+msg/.style={-{Stealth[scale=1.0]},thick,color=#1},
+selfcall/.style={-{Stealth[scale=0.9]},thick,rounded corners=3pt,color=#1},
+phase/.style={font=\small\bfseries,text=acaRedLine,fill=acaRedFill,inner sep=5pt,rounded corners=3pt},
+note/.style={rectangle,rounded corners=3pt,draw=acaGreyLine!60,fill=acaGoldFill,
+    align=left,font=\footnotesize,inner sep=6pt,text width=3.8cm},
 ```
-Lifeline gap: 3.0-4.0cm
-Message vertical spacing: 1.0cm
-Header height: 0.9cm
+
+### Activation Bars (MUST get right)
+- Segment activation bars per interaction, NOT one continuous bar from top to bottom.
+- Each segment: start y = first_received_message_y - 0.15cm, end y = last_reply_y + 0.15cm.
+- Idle gaps between segments show "busy vs waiting" rhythm.
+- Arrows must start/finish at activation bar **edges**, not lifeline center:
+  ```latex
+  % Rightbound message: from sender's right edge to receiver's left edge
+  \draw[msg=blue] ([xshift=0.225cm]sender |- 0,-2) -- ([xshift=-0.225cm]receiver |- 0,-2);
+  ```
+- Absolute y coordinates only. Never `++(0,-offset)` for activation bars — misaligns with messages.
+
+### UML Combined Fragments (par/loop/alt/opt)
+```latex
+combo/.style={rectangle,draw=acaGreyLine!90,fill=none,dashed,inner sep=0pt,line width=1.2pt},
+combo_label/.style={rectangle,fill=acaGreyFill,draw=acaGreyLine!90,font=\small\bfseries,inner sep=4pt},
 ```
+- Box bounds: left=leftmost_participant_x - 1.0cm, right=rightmost_participant_x + 2.5cm.
+- Type label at box.north west inset.
+- alt divider: horizontal dashed line at y = midpoint between branches, guard label `[condition]` below.
+- Nesting: inner box inset 0.3cm, lighter dash color.
+
+### Fill Empty Space
+- Self-call arcs width >= 2.0cm. Rightmost participant's self-call arcs go **left**.
+- Note boxes between lifelines (not at right edge where they get clipped).
+- Phase background stripes: `\fill[color!15]` per phase zone for visual rhythm.
+
+### Quick Checks
+- Global font >= `\small` on tall figures
+- Rightmost participant self-calls bend left (not right → overflow)
+- Activation bars visible at 300dpi (width >= 0.45cm)
+- Lifelines drawn LAST (on top of everything)
+- No all-empty lifeline columns
+- `border >= 25pt` to avoid clip

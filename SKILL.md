@@ -281,7 +281,7 @@ tikz-figure-skill/
     pgfplots-templates.md           -- 6 CSV-driven chart templates
     graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
     geometry-math.md                -- Coordinate systems, formula boxes
-    sequence-diagram.md             -- Lifeline spacing, activation bars
+    geometry-math.md                -- Coordinate systems, formula boxes
     tikz-validator.py               -- Pre-compile 10-check validator
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector
     tikz-path-router.py             -- A* path planning
