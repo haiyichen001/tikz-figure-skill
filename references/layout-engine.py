@@ -232,20 +232,20 @@ def generate_tex(all_nodes, meta, spec):
         sw, sh = src["width"], src["height"]
         dw, dh = dst["width"], dst["height"]
 
-        # Three cases only. -| and |- create perfect orthogonal L-shapes.
-        # rounded corners on the edge style makes the single bend smooth.
+        # Straight when aligned, L-shaped only when y differs
+        lbl = f" node[midway,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
         if abs(sx - dx) < 0.5:
-            # Same column: straight vertical
-            lbl = f" node[midway,right,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
             lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north){lbl};")
-        elif sx > dx:
-            # Source right of target: exit west, enter east
-            lbl = f" node[pos=0.5,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
-            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
-        else:
-            # Source left of target: exit east, enter west (normal forward flow)
-            lbl = f" node[pos=0.5,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
+        elif abs(sy - dy) < 0.3:
+            # Same row: straight horizontal
+            if sx < dx:
+                lines.append(f"\\draw[{estyle}] ({fid}.east) -- ({tid}.west){lbl};")
+            else:
+                lines.append(f"\\draw[{estyle}] ({fid}.west) -- ({tid}.east){lbl};")
+        elif sx < dx:
             lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({tid}.west){lbl};")
+        else:
+            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
 
     # Zone backgrounds
     if groups:
