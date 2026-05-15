@@ -61,6 +61,60 @@ Every time a node is stacked below another, compute y explicitly from the bottom
 - **Layer titles use absolute x**: all layer titles share one absolute x-coordinate.
 - Side-by-side comparison: center channel >= 3cm gap.
 
+## Node Sizing: Compute from Text, Not Fixed Numbers
+
+**MANDATORY: Node sizes must be derived from text content, not arbitrary fixed values.**
+
+`minimum width` and `minimum height` in TikZ are **floors**, not ceilings. TikZ always auto-grows the box to fit text. Setting them larger than the text creates empty space. Setting them too small causes overlap with adjacent nodes.
+
+### How to size nodes correctly:
+
+1. **For single-line text**: do NOT set `minimum width`. TikZ auto-sizes: `text_width + 2 * inner_sep`.
+   ```latex
+   % CORRECT — auto-sized to text
+   \node[draw,rounded corners=2pt,inner sep=6pt] at (5,0) {Short label};
+   ```
+
+2. **For multi-line text**: use `text width` + `align=center`, do NOT set `minimum height`. Height auto-computes from line count.
+   ```latex
+   % CORRECT — width fixed for wrapping, height auto
+   \node[draw,text width=4cm,align=center,inner sep=6pt] at (5,0) {Long text that wraps};
+   ```
+
+3. **When boxes in a column must align (same width)**: compute the max text width first, then set `minimum width` to that value, not an arbitrary number.
+   ```
+   Step 1: estimate width of each label (char_count * font_coefficient)
+   Step 2: max_width = max(all label widths)
+   Step 3: minimum width = max_width + 2 * inner_sep + 0.3  (0.3cm safety margin)
+   ```
+
+4. **Font width estimation for sizing**:
+   | Font command | cm per char |
+   |-------------|-------------|
+   | `\tiny` | 0.08 |
+   | `\scriptsize` | 0.10 |
+   | `\footnotesize` | 0.12 |
+   | `\small` | 0.15 |
+   | `\normalsize` | 0.18 |
+
+5. **For stacked nodes, compute y from actual dimensions**:
+   ```
+   y_next = y_prev - (height_prev / 2) - gap - (height_next / 2)
+   
+   where height = (number_of_lines * line_height) + 2 * inner_sep
+   and line_height ≈ font_size_cm * 1.5
+   ```
+
+### Anti-patterns to avoid:
+```latex
+% WRONG — 4cm box for 3-character text "RBF"
+\node[minimum width=4cm,minimum height=0.65cm] {RBF};
+
+% WRONG — all boxes forced to same arbitrary size
+\node[box,minimum width=3.8cm,minimum height=0.7cm] {Tiny};  % too big
+\node[box,minimum width=3.8cm,minimum height=0.7cm] {Very long description};  % may overflow
+```
+
 ## Code Standards
 - `\documentclass[tikz,border=...]{standalone}` as first line
 - Color definitions in preamble, before `\begin{document}`

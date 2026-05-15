@@ -78,10 +78,20 @@ def parse_coords(line: str) -> list[Coord]:
             for m in COORD_RE.finditer(line)]
 
 
+# Pattern for anonymous nodes: \node[style] at (x,y) {text};
+ANON_NODE_RE = re.compile(
+    r'\\node\s*\[([^\]]*)\]\s*'
+    r'at\s*\((-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\)\s*'
+    r'\{((?:[^{}]|\{[^{}]*\})*)\}'  # text content (allow single-level braces)
+)
+
+
 def parse_nodes(lines: list[str]) -> list[Node]:
-    """Extract all named nodes with positions and dimensions."""
+    """Extract all nodes (named AND anonymous) with positions and dimensions."""
     nodes = []
+    anon_count = 0
     for line in lines:
+        # Named nodes
         for pattern in [NODE_RE, NODE_ALT_RE]:
             for m in pattern.finditer(line):
                 groups = m.groups()
@@ -109,6 +119,28 @@ def parse_nodes(lines: list[str]) -> list[Node]:
                     x=float(x), y=float(y),
                     width=width, height=height
                 ))
+        # Anonymous nodes: \node[style] at (x,y) {text};
+        for m in ANON_NODE_RE.finditer(line):
+            opts, x, y, text = m.groups()
+            width, height = 2.8, 0.9
+            wm = re.search(r'minimum\s+width\s*=\s*(\d+\.?\d*)', opts)
+            hm = re.search(r'minimum\s+height\s*=\s*(\d+\.?\d*)', opts)
+            tw = re.search(r'text\s+width\s*=\s*(\d+\.?\d*)', opts)
+            if wm:
+                width = float(wm.group(1))
+            if tw:
+                width = max(width, float(tw.group(1)) + 0.5)
+            if hm:
+                height = float(hm.group(1))
+            # Clean text for display: strip LaTeX commands
+            clean_text = re.sub(r'\\[a-zA-Z]+', '', text)
+            clean_text = re.sub(r'[{}$$\\]', '', clean_text).strip()[:30]
+            anon_count += 1
+            nodes.append(Node(
+                name=clean_text if clean_text else f"_anon{anon_count}",
+                x=float(x), y=float(y),
+                width=width, height=height
+            ))
     return nodes
 
 

@@ -386,6 +386,38 @@ def check_line_crossings(lines: list[str]) -> list[Issue]:
     return issues
 
 
+# ─── Check 11: Oversize nodes (box >> text content) ───
+
+def check_oversize_nodes(nodes: list[Node]) -> list[Issue]:
+    """Flag nodes where explicitly-set widths/heights are >1.8x estimated text size."""
+    issues = []
+    for node in nodes:
+        if not node.name or len(node.name) < 2:
+            continue
+        # Skip anonymous text labels (long descriptive text)
+        if len(node.name) > 30:
+            continue
+        # Skip default-dimension nodes (parser used 2.8/0.9 as fallback)
+        if abs(node.width - 2.8) < 0.01 and abs(node.height - 0.9) < 0.01:
+            continue
+
+        text_chars = len(node.name)
+        est_width = text_chars * 0.12 + 0.8   # chars * font + inner_sep
+        est_height = 0.65                      # single line + padding
+
+        if node.width > 1.5 and node.width > est_width * 1.8:
+            issues.append(Issue(level="WARN", category="oversize", line_no=0,
+                message=f"Box too wide: '{node.name}' {node.width:.1f}cm for '{node.name}'"
+                f" (est text ~{est_width:.1f}cm, ratio {node.width/est_width:.1f}x)"
+                f" — drop minimum width or reduce to ~{est_width:.1f}cm"))
+        if node.height > 1.0 and node.height > est_height * 2.5:
+            issues.append(Issue(level="WARN", category="oversize", line_no=0,
+                message=f"Box too tall: '{node.name}' {node.height:.1f}cm"
+                f" (est text ~{est_height:.1f}cm, ratio {node.height/est_height:.1f}x)"
+                f" — drop minimum height"))
+    return issues
+
+
 # ─── Main ───
 
 def validate(filepath: str) -> list[Issue]:
@@ -408,6 +440,7 @@ def validate(filepath: str) -> list[Issue]:
     all_issues.extend(check_edge_clipping(nodes, zones))
     all_issues.extend(check_boundary_clearance(nodes))
     all_issues.extend(check_line_crossings(lines))
+    all_issues.extend(check_oversize_nodes(nodes))
     return all_issues
 
 
