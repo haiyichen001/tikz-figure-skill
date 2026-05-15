@@ -71,7 +71,7 @@ Say `/tikz-figure-skill Draw a 3-layer system architecture` and the skill will:
 
 1. **Env check** — auto-run `scripts/check-env.py`, detect LaTeX/Python/fonts
 2. **Analyze** — output drawing plan with module list + layout strategy
-3. **Generate** — produce TikZ code. Simple diagrams: absolute coords (pdflatex). Complex diagrams (>15 nodes or cross-column edges): `\graph` syntax (lualatex + graphdrawing auto-layout + auto edge routing).
+3. **Generate** — produce TikZ `\graph` syntax. lualatex + graphdrawing computes all node positions and edge routes at compile time via Sugiyama layered layout. No manual coordinates. No overlap. No edge-crossing-boxes.
 4. **Validate** — `tikz-validator.py` (10 checks)
 5. **Compile** — lualatex (default, for graphdrawing support) or pdflatex fallback, auto-retry on failure (max 3)
 6. **Post-check** — `pdf-overlap-checker.py`, if reference image exists → auto-call `figure-diff.py`
@@ -158,8 +158,8 @@ Loaded from `references/graphdrawing-guide.md`. For diagrams with >15 nodes, swi
 
 Auto-switch rules:
 ```
-if node_count <= 15:  pdflatex, manual coords, run tikz-validator
-elif node_count <= 40: lualatex, layered layout
+if node_count <= 15:  lualatex, layered layout (simple)
+elif node_count <= 40: lualatex, layered layout (dense)
 else:                  lualatex, spring layout + edge routing
 ```
 
@@ -213,7 +213,7 @@ Default to TikZ. Use draw.io only when: user requests it, needs heavy gradients/
 
 All TikZ figures must load:
 - `references/collision-detection.md` — pre-compile collision rules + Bezier formulas
-- `references/tikz-coding-rules.md` — **Rule 0: absolute coordinates only. No relative positioning.**
+- `references/tikz-coding-rules.md` — **Rule 0: always use graphdrawing `\graph` syntax. No manual coordinates.**
 - `references/visual-patterns.md` — reusable drawing patterns (>=3 per figure)
 - `references/design-philosophy.md` — design principles + quality gates
 
