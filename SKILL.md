@@ -46,13 +46,15 @@ Generate publication-quality LaTeX/TikZ diagrams with automated collision detect
 
 ## Quickstart
 
-Say `/tikz-figure-skill Draw a 3-layer system architecture with LLM Service, Agent Harness, and Solver Backend` and the skill will:
+Say `/tikz-figure-skill Draw a 3-layer system architecture` and the skill will:
 
-1. Analyze → output drawing plan
-2. Auto-detect platform and available LaTeX engines
-3. Generate TikZ code with academic color scheme
-4. Run pre-compilation collision validator
-5. Compile → run PDF overlap checker → self-score → iterate until clean
+1. **Env check** — auto-run `scripts/check-env.py`, detect LaTeX/Python/fonts
+2. **Analyze** — output drawing plan with module list + layout strategy
+3. **Generate** — produce TikZ code with academic color scheme
+4. **Validate** — `tikz-validator.py` (10 checks), if line-crossing detected → auto-call `tikz-path-router.py --auto-fix`
+5. **Compile** — pdflatex (or lualatex for graphdrawing), auto-retry on failure (max 3)
+6. **Post-check** — `pdf-overlap-checker.py`, if reference image exists → auto-call `figure-diff.py`
+7. **Deliver** — .tex + .pdf + .png + validation report
 
 ## Output Modes
 
@@ -64,18 +66,11 @@ Say `/tikz-figure-skill Draw a 3-layer system architecture with LLM Service, Age
 
 Modes auto-select based on context. Complex architectures (>15 nodes) default to LuaLaTeX graphdrawing.
 
-## Environment Check (auto-run before first compile)
+## Environment Check (auto-run on skill startup)
 
-The skill auto-detects missing dependencies. Run manually anytime:
+Skill automatically runs `scripts/check-env.py` on first invocation. Reports: LaTeX engines found, PDF-to-PNG tool, Python deps, CJK fonts. Missing optional deps show install hints. Missing required deps (pdflatex) block skill execution.
 
-```bash
-python scripts/check-env.py
-```
-```powershell
-python scripts\check-env.py
-```
-
-Required: `pdflatex` (or `lualatex`). Optional: `pdftoppm` for PNG, Python `pdfplumber`/`pymupdf` for validation.
+Run manually: `python scripts/check-env.py`
 
 ## Core Workflow
 
@@ -209,10 +204,11 @@ Data-specific (optional):
 - `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
 - `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
 
-Quality tools (run at step 5):
-- `references/tikz-validator.py` — pre-compile 10 checks
-- `references/pdf-overlap-checker.py` — post-compile PDF overlap
-- `references/figure-diff.py` — SSIM comparison for reference-based work
+Quality tools (all based on shared `references/tikz_parser.py`):
+- `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)
+- `references/pdf-overlap-checker.py` — post-compile PDF overlap (auto-run step 6)
+- `references/tikz-path-router.py` — A* auto-routing, triggered if line-crossing detected (step 4)
+- `references/figure-diff.py` — SSIM comparison, triggered if reference image provided (step 6)
 
 ## Quality Gates
 
@@ -271,8 +267,13 @@ Python scripts use `python` or `python3` based on platform auto-detection. Paths
 tikz-figure-skill/
   SKILL.md                          -- Main skill definition (290 lines)
   scripts/
-    check-env.py                    -- Cross-platform dependency checker
+    check-env.py                    -- Cross-platform dependency checker (auto-run)
   references/
+    tikz_parser.py                  -- Shared .tex parser (used by all tools)
+    tikz-validator.py               -- Pre-compile 10-check validator (auto-run)
+    tikz-path-router.py             -- A* auto-routing, accepts --from-tex
+    pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
+    figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
     design-philosophy.md            -- Core design principles + quality gates
     tikz-coding-rules.md            -- Mandatory TikZ conventions
     layout-patterns.md              -- Architecture, pipeline, sequence, 3-column
@@ -280,12 +281,7 @@ tikz-figure-skill/
     collision-detection.md          -- Bezier formulas, clearance tables
     pgfplots-templates.md           -- 6 CSV-driven chart templates
     graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
-    geometry-math.md                -- Coordinate systems, formula boxes
-    geometry-math.md                -- Coordinate systems, formula boxes
-    tikz-validator.py               -- Pre-compile 10-check validator
-    pdf-overlap-checker.py          -- Post-compile PDF overlap detector
-    tikz-path-router.py             -- A* path planning
-    figure-diff.py                  -- SSIM comparison tool
+    geometry-math.md                -- Coordinate systems, formulas
 ```
 
 ## Credits
