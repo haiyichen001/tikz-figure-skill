@@ -207,6 +207,15 @@ def generate_tex(all_nodes, meta, spec):
     for n in all_nodes:
         st = safe_style(n["style"])
         txt = n["text"].replace("|","\\\\")
+        # Auto-wrap lines with math notation in $...$
+        parts = txt.split("\\\\")
+        wrapped = []
+        for p in parts:
+            p = p.strip()
+            if (("^" in p or "_" in p) and not p.startswith("$")):
+                p = "$" + p + "$"
+            wrapped.append(p)
+        txt = "\\\\".join(wrapped)
         lines.append(f"\\node[{st}] ({n['id']}) at ({n['x']:.2f},{n['y']:.2f}) {{{txt}}};")
 
     # Edges — orthogonal routing via rail
@@ -215,7 +224,9 @@ def generate_tex(all_nodes, meta, spec):
         fid, tid = e["from"], e["to"]
         etype = e.get("type","flow")
         estyle = edge_types.get(etype, edge_types["flow"])
-        label = e.get("label","")
+        label = e.get("label","").replace("|","\\\\")
+        if (("^" in label or "_" in label) and not label.startswith("$")):
+            label = "$" + label + "$"
 
         src = node_map.get(fid)
         dst = node_map.get(tid)
@@ -233,9 +244,6 @@ def generate_tex(all_nodes, meta, spec):
             # Same column: straight down
             lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north)")
             if label:
-                lines.append(f"  node[midway,right,font=\\tiny\\sffamily] {{{label}}};")
-            else:
-                if label:
                 lines.append(f"  node[midway,right,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}};")
             else:
                 lines.append(";")
