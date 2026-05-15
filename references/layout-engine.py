@@ -188,6 +188,7 @@ def generate_tex(all_nodes, meta, spec):
     lines.append(r"\begin{document}")
     lines.append(r"\begin{tikzpicture}[")
     lines.append(r"  >={Stealth},line cap=round,")
+    lines.append(r"  every node/.style={outer sep=4pt},")
     lines.append(r"]")
 
     # Title
@@ -236,19 +237,18 @@ def generate_tex(all_nodes, meta, spec):
         # shorten only for horizontal/cross-column (gap is large).
         # No shorten for vertical (row_gap=0.3cm is already tight).
         is_vert = abs(sx - dx) < 0.5
-        gap_shorten = ",shorten >=4pt,shorten <=4pt" if not is_vert else ""
         lbl = f" node[midway,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
         if is_vert:
             lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north){lbl};")
         elif abs(sy - dy) < 0.3:
             if sx < dx:
-                lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.east) -- ({tid}.west){lbl};")
+                lines.append(f"\\draw[{estyle}] ({fid}.east) -- ({tid}.west){lbl};")
             else:
-                lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.west) -- ({tid}.east){lbl};")
+                lines.append(f"\\draw[{estyle}] ({fid}.west) -- ({tid}.east){lbl};")
         elif sx < dx:
-            lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.east) -| ({tid}.west){lbl};")
+            lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({tid}.west){lbl};")
         else:
-            lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.west) -| ({tid}.east){lbl};")
+            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
 
     # Zone backgrounds
     if groups:
