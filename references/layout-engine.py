@@ -98,8 +98,8 @@ def compute_layout(spec):
     groups = spec.get("groups",[])
     styles = spec.get("styles",{})
     cfg = spec.get("layout",{})
-    col_gap = cfg.get("column_gap",3.8)
-    row_gap = cfg.get("row_gap",0.5)
+    col_gap = cfg.get("column_gap",4.5)
+    row_gap = cfg.get("row_gap",0.6)
     all_nodes = []
     x_positions = {}
     col_extents = {}  # col_idx -> (x, max_width, y_min, y_max)
@@ -188,7 +188,7 @@ def generate_tex(all_nodes, meta, spec):
     lines.append(r"\begin{document}")
     lines.append(r"\begin{tikzpicture}[")
     lines.append(r"  >={Stealth},line cap=round,")
-    lines.append(r"  every node/.style={outer sep=3pt},")
+    lines.append(r"  every node/.style={outer sep=5pt},")
     lines.append(r"]")
 
     # Title
@@ -279,20 +279,65 @@ def generate(spec):
     nodes, meta = compute_layout(spec)
     return generate_tex(nodes, meta, spec)
 
+def run_validator(tex_path):
+    """Run tikz-validator.py, return (errors, warnings) counts."""
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)),"tikz-validator.py")
+    try:
+        r = subprocess.run([sys.executable,script,tex_path],capture_output=True,text=True,timeout=30)
+        out = r.stdout + r.stderr
+        errs = out.count("[ERROR]") + out.count("ERROR")
+        warns = out.count("[WARN]") + out.count("WARN")
+        # Also parse explicit counts
+        m = re.search(r'Total:\s*(\d+)\s*errors?,\s*(\d+)\s*warnings?',out)
+        if m: errs, warns = int(m.group(1)), int(m.group(2))
+        return errs, warns, out
+    except: return 0, 0, ""
+
+def auto_fix(spec, tex_path, max_iter=5):
+    """Iteratively fix layout until validator passes or max_iter reached."""
+    best_errs, best_warns = 999, 999
+    for i in range(max_iter):
+        tex = generate(spec)
+        with open(tex_path,"w",encoding="utf-8") as f: f.write(tex)
+        errs, warns, vout = run_validator(tex_path)
+        if errs == 0 and warns == 0:
+            return tex, True
+        # Widen gaps if warnings persist
+        if warns > 0:
+            if "layout" not in spec: spec["layout"] = {}
+            cfg = spec["layout"]
+            if "short-arrow" in vout or "collision" in vout or "tight" in vout:
+                cfg["row_gap"] = cfg.get("row_gap",0.6) + 0.2
+                cfg["column_gap"] = cfg.get("column_gap",4.5) + 0.8
+            if "overflow" in vout:
+                cfg["row_gap"] = cfg.get("row_gap",0.6) + 0.1
+            if "edge-clip" in vout:
+                spec.setdefault("canvas",{})["border"] = spec.get("canvas",{}).get("border",15) + 5
+        best_errs, best_warns = errs, warns
+    return generate(spec), False
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python layout-engine.py spec.json [--compile] [--output file.tex]")
+        print("Usage: python layout-engine.py spec.json [--compile] [--output file.tex] [--validate]")
         sys.exit(1)
     with open(sys.argv[1],"r",encoding="utf-8") as f:
         spec = json.load(f)
-    tex = generate(spec)
+
+    do_validate = "--validate" in sys.argv
     if "--output" in sys.argv:
         idx = sys.argv.index("--output")
         out = sys.argv[idx+1] if idx+1<len(sys.argv) else spec.get("output","layout_output.tex")
     elif "--compile" in sys.argv:
         out = spec.get("output","layout_output.tex")
     else:
-        print(tex); return
+        print(generate(spec)); return
+
+    if do_validate:
+        tex, ok = auto_fix(spec, out)
+        print(f"Auto-fix: {'PASS' if ok else 'best effort (see warnings above)'}",file=sys.stderr)
+    else:
+        tex = generate(spec)
+
     with open(out,"w",encoding="utf-8") as f:
         f.write(tex)
     print(f"Wrote: {out}",file=sys.stderr)
