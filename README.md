@@ -1,6 +1,13 @@
-# tikz-figure-skill v1.3
+# tikz-figure-skill v2.0
 
-A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with built-in collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Features a fully integrated tool pipeline with shared parser, auto-fix routing, and cross-platform environment checks.
+A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with built-in collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout.
+
+## What Makes This Different
+
+- **Zero manual coordinates.** AI defines nodes and edges in a structure; LuaLaTeX graphdrawing computes all positions and routes edges at compile time. No overlap, no edge-crossing-boxes, no y-position math.
+- **Production toolchain.** 11 pre-compile checks + PDF overlap detection + SSIM comparison. Catches visual bugs that pdflatex silently ignores.
+- **Single-file output.** One standalone `.tex` with `\graph` syntax. Drop it into any LaTeX project, compiles with lualatex.
+- **Cross-platform.** macOS, Linux, Windows. Auto-detects LaTeX distro, CJK fonts, Python deps.
 
 ## Features
 
@@ -125,4 +132,14 @@ tikz-figure-skill/
 
 ## Credits
 
-Built on [thesis-figure-skill](https://github.com/0xE1337/thesis-figure-skill) by 0xE1337. Collision detection from [MixtapeTools](https://github.com/scunning1975/MixtapeTools) by scunning1975. License: MIT
+Built on [thesis-figure-skill](https://github.com/0xE1337/thesis-figure-skill) by 0xE1337. Collision detection from [MixtapeTools](https://github.com/scunning1975/MixtapeTools) by scunning1975.
+
+## Topics
+
+`academic-paper` `ai-tools` `claude-code` `claude-skill` `diagram` `figure-generation` `latex` `thesis` `tikz` `pgfplots` `graphdrawing` `collision-detection` `lualatex`
+
+> Add via: repo page → gear icon (About) → paste into Topics field.
+
+## License
+
+MIT
