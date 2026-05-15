@@ -72,34 +72,27 @@ Agent Harness, and Solver Backend. Include feedback loops.
 | 5 | Heatmap matrix | Inline data table |
 | 6 | Box plot | Pre-computed quartiles |
 
-## Structure
+## Structure (13 references, 113 KB)
 
 ```
 tikz-figure-skill/
-  SKILL.md                          -- Main skill definition (299 lines)
+  SKILL.md                          -- Main skill definition (290 lines)
   scripts/
     check-env.py                    -- Cross-platform dependency checker
   references/
-    design-philosophy.md            -- Core design principles
-    collision-detection.md          -- Bezier formulas, clearance tables
-    pgfplots-templates.md           -- 6 CSV-driven chart templates
-    graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
-    tikz-validator.py               -- Pre-compile 10-check validator
-    pdf-overlap-checker.py          -- Post-compile PDF overlap detector
-    tikz-global-rules.md            -- TikZ coding conventions
-    visual-patterns.md              -- 9 reusable visual patterns
-    review-checklist.md             -- 44-item visual quality checklist
-    data-visualization.md           -- Embedded charts (heatmap, bars)
-    layered-architecture.md         -- Zone alignment, cross-layer
-    sequence-diagram.md             -- Lifeline spacing
-    data-pipeline.md                -- Node shapes, legends
-    three-column-mapping.md         -- Three-column coords
-    geometry-math.md                -- Coordinate systems, formulas
-    drawio-modes.md                 -- 6 draw.io modes (A-F)
-    figure-diff.py                  -- SSIM comparison tool
-    tikz-path-router.py             -- A* path planning
-    experience-log.md               -- Debugging experience
-    evolution.md                    -- Best-practice parameters
+    design-philosophy.md            -- Core design principles + quality gates (4.6 KB)
+    tikz-coding-rules.md            -- Mandatory TikZ conventions (3.1 KB)
+    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column (2.6 KB)
+    visual-patterns.md              -- 9 patterns + embedded viz + font rules (3.3 KB)
+    collision-detection.md          -- Bezier formulas, clearance tables (3.6 KB)
+    pgfplots-templates.md           -- 6 CSV-driven chart templates (9.1 KB)
+    graphdrawing-guide.md           -- LuaLaTeX auto-layout guide (6.2 KB)
+    geometry-math.md                -- Coordinate systems, formulas (4.7 KB)
+    sequence-diagram.md             -- Lifeline spacing, activation bars (12.4 KB)
+    tikz-validator.py               -- Pre-compile 10-check validator (28.6 KB)
+    pdf-overlap-checker.py          -- Post-compile PDF overlap detector (17.8 KB)
+    tikz-path-router.py             -- A* path planning (10.7 KB)
+    figure-diff.py                  -- SSIM comparison tool (6.7 KB)
 ```
 
 ## Requirements
@@ -110,9 +103,10 @@ tikz-figure-skill/
 
 ## Changelog
 
-- **v1.2** — Full YAML frontmatter (version/author/allowed-tools/model/tags), SKILL.md slimmed to 299 lines, `context: fork` isolation, `scripts/check-env.py` cross-platform checker, 3 output modes, auto-retry on compile failure, `references/design-philosophy.md`
-- **v1.1** — PGFPlots 6 templates, graphdrawing auto-layout guide, collision detection references
-- **v1.0** — Initial release: thesis-figure-skill base + collision detection (10 checks in tikz-validator.py)
+- **v1.2.1** — Flattened references: 20 → 13 files (113 KB, -35% files, -62% size). Merged 3 layout files → `layout-patterns.md`. Merged data-viz → `visual-patterns.md`. Slimmed `tikz-global-rules.md` (36.8 KB → `tikz-coding-rules.md` 3.1 KB). Deleted `drawio-modes.md` (35.6 KB), `review-checklist.md` (38.5 KB), `experience-log.md` (26.3 KB), `evolution.md` (6.3 KB), `data-visualization.md`, `layered-architecture.md`, `data-pipeline.md`, `three-column-mapping.md`.
+- **v1.2** — Full YAML frontmatter, SKILL.md 299 lines, `context: fork`, `check-env.py`, 3 modes, auto-retry, `design-philosophy.md`
+- **v1.1** — PGFPlots templates, graphdrawing guide, collision detection
+- **v1.0** — Initial release
 
 ## Credits
 

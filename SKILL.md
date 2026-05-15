@@ -184,34 +184,39 @@ Default to TikZ. Use draw.io only when: user requests it, needs heavy gradients/
 
 | Chart Type | Layout | Reference File |
 |------------|--------|---------------|
-| System architecture | Bottom-up layered | `references/layered-architecture.md` |
-| Protocol/flowchart | Left→right or top→down | `references/data-pipeline.md` |
-| Sequence diagram | Multi-column lifelines | `references/sequence-diagram.md` |
-| 3-column mapping | Left-center-right | `references/three-column-mapping.md` |
+| System architecture | Bottom-up layered | `references/layout-patterns.md` |
+| Protocol/flowchart | Left→right or top→down | `references/layout-patterns.md` |
+| Sequence diagram | Multi-column lifelines | `references/layout-patterns.md` |
+| 3-column mapping | Left-center-right | `references/layout-patterns.md` |
 | Geometry/math | Coordinate + geometric | `references/geometry-math.md` |
-| Data visualization mix | Block + embedded charts | `references/data-visualization.md` |
+| Embedded visualizations | TikZ-native plots | `references/visual-patterns.md` |
 | PGFPlots bar/line/scatter | CSV → `\addplot table` | `references/pgfplots-templates.md` |
 | Graphdrawing auto-layout | LuaLaTeX algorithm | `references/graphdrawing-guide.md` |
-| Roadmaps (decorative) | draw.io modes A-F | `references/drawio-modes.md` |
 
 ## Reference Loading Index
 
-Must load matching reference per chart type. All TikZ figures must also load:
-- `references/collision-detection.md` (pre-compile collision rules)
-- `references/visual-patterns.md` (9 reusable drawing patterns)
-- `references/design-philosophy.md` (design principles)
+All TikZ figures must load:
+- `references/collision-detection.md` — pre-compile collision rules + Bezier formulas
+- `references/tikz-coding-rules.md` — mandatory coding conventions
+- `references/visual-patterns.md` — reusable drawing patterns (>=3 per figure)
+- `references/design-philosophy.md` — design principles + quality gates
 
-Quality gates loaded at step 5:
-- `references/review-checklist.md` (44-item visual QA)
-- `references/figure-diff.py` (SSIM comparison for reference-based work)
+Layout-specific (pick one):
+- `references/layout-patterns.md` — architecture, pipeline, sequence, 3-column mapping
+- `references/geometry-math.md` — coordinate systems, formula boxes
 
-Post-completion:
-- `references/experience-log.md` (read existing + append new)
-- `references/evolution.md` (verified best-practice parameters)
+Data-specific (optional):
+- `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
+- `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
+
+Quality tools (run at step 5):
+- `references/tikz-validator.py` — pre-compile 10 checks
+- `references/pdf-overlap-checker.py` — post-compile PDF overlap
+- `references/figure-diff.py` — SSIM comparison for reference-based work
 
 ## Quality Gates
 
-Deliver only when 30/30 on the review checklist. The anti-cheat: after scoring, ask "what would a reviewer catch?" and fix anything found. If 3 rounds of iteration don't reach 30/30, the layout approach itself is wrong — restart from Step 1, don't keep patching.
+Self-score after PNG render. Minimum pass: no ERROR items, <= 3 WARN items. If 3 rounds of iteration don't pass, the layout approach itself is wrong — restart from Step 1.
 
 ## Cross-Platform Notes
 
@@ -264,30 +269,23 @@ Python scripts use `python` or `python3` based on platform auto-detection. Paths
 
 ```
 tikz-figure-skill/
-  SKILL.md                          -- Main skill definition (<500 lines)
+  SKILL.md                          -- Main skill definition (290 lines)
   scripts/
     check-env.py                    -- Cross-platform dependency checker
   references/
-    design-philosophy.md            -- Core design principles
+    design-philosophy.md            -- Core design principles + quality gates
+    tikz-coding-rules.md            -- Mandatory TikZ conventions
+    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column
+    visual-patterns.md              -- 9 reusable drawing patterns + font rules
     collision-detection.md          -- Bezier formulas, clearance tables
     pgfplots-templates.md           -- 6 CSV-driven chart templates
     graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
+    geometry-math.md                -- Coordinate systems, formula boxes
+    sequence-diagram.md             -- Lifeline spacing, activation bars
     tikz-validator.py               -- Pre-compile 10-check validator
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector
-    tikz-global-rules.md            -- TikZ coding conventions
-    visual-patterns.md              -- 9 reusable visual patterns
-    review-checklist.md             -- 44-item visual quality checklist
-    data-visualization.md           -- Embedded charts (heatmap, bars)
-    layered-architecture.md         -- Zone alignment, cross-layer
-    sequence-diagram.md             -- Lifeline spacing
-    data-pipeline.md                -- Node shapes, legends
-    three-column-mapping.md         -- Three-column coords
-    geometry-math.md                -- Coordinate systems, formulas
-    drawio-modes.md                 -- 6 draw.io modes (A-F)
-    figure-diff.py                  -- SSIM comparison tool
     tikz-path-router.py             -- A* path planning
-    experience-log.md               -- Debugging experience
-    evolution.md                    -- Best-practice parameters
+    figure-diff.py                  -- SSIM comparison tool
 ```
 
 ## Credits
