@@ -233,12 +233,9 @@ def generate_tex(all_nodes, meta, spec):
         sw, sh = src["width"], src["height"]
         dw, dh = dst["width"], dst["height"]
 
-        # Straight when aligned, L-shaped only when y differs.
-        # shorten only for horizontal/cross-column (gap is large).
-        # No shorten for vertical (row_gap=0.3cm is already tight).
-        is_vert = abs(sx - dx) < 0.5
+        # Horizontal L-shape: push vertical segment 0.4cm away from node column
         lbl = f" node[midway,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
-        if is_vert:
+        if abs(sx - dx) < 0.5:
             lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north){lbl};")
         elif abs(sy - dy) < 0.3:
             if sx < dx:
@@ -246,9 +243,9 @@ def generate_tex(all_nodes, meta, spec):
             else:
                 lines.append(f"\\draw[{estyle}] ({fid}.west) -- ({tid}.east){lbl};")
         elif sx < dx:
-            lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({tid}.west){lbl};")
+            lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.4,0) |- ({tid}.west){lbl};")
         else:
-            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
+            lines.append(f"\\draw[{estyle}] ({fid}.west) -- ++(-0.4,0) |- ({tid}.east){lbl};")
 
     # Zone backgrounds
     if groups:
@@ -260,10 +257,10 @@ def generate_tex(all_nodes, meta, spec):
             col = meta["col_extents"].get(gi,{})
             if not col: continue
             zc = zone_colors[gi % len(zone_colors)]
-            x0 = col["x"] - col["max_w"]/2 - 0.5
-            x1 = col["x"] + col["max_w"]/2 + 0.5
-            y0 = col["y_bot"] - 0.4
-            y1 = col["y_top"] + 0.4
+            x0 = col["x"] - col["max_w"]/2 - 1.2
+            x1 = col["x"] + col["max_w"]/2 + 1.2
+            y0 = col["y_bot"] - 0.8
+            y1 = col["y_top"] + 1.8
             lines.append(f"  \\fill[{zc},rounded corners=6pt] ({x0:.1f},{y0:.1f}) rectangle ({x1:.1f},{y1:.1f});")
             # Zone label
             label = grp.get("label","")
