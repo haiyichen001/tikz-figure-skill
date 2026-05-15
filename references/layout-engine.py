@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """
-TikZ Layout Engine — computes exact (x,y) coordinates from text dimensions.
-AI defines nodes and stacking order; the engine does the math. No guessing.
+TikZ Layout Engine — two modes:
+  1. ABSOLUTE (--mode abs, default): computes exact (x,y) from text dimensions
+  2. GRAPHDRAWING (--mode graph): generates \graph syntax for lualatex auto-layout
+
+Graphdrawing mode eliminates coordinate math entirely. AI defines the graph
+structure (nodes, groups, edges). LuaLaTeX computes positions and routes edges
+at compile time — no overlap, no edge-crossing-boxes, no y-position formulas.
 
 Usage:
   python layout-engine.py spec.json > output.tex
@@ -464,16 +469,155 @@ def validate_no_overlaps(nodes: list[NodeBox], gap: float) -> list[str]:
     return warnings
 
 
+# ─── Graphdrawing mode ───
+
+def generate_graphdrawing_tex(spec: dict) -> str:
+    """Generate .tex using LuaLaTeX \\graph syntax for automatic layout.
+
+    Spec keys (minimal — graphdrawing handles positioning):
+      - title: {text, subtitle}
+      - nodes: [{id, text, style, layer}]  — layer groups nodes horizontally
+      - edges: [{from, to, style, label}]
+      - styles: {name: {fill, draw, font, inner_sep, rounded}}
+      - canvas: {border}
+    """
+    border = spec.get("canvas", {}).get("border", 15)
+    styles = spec.get("styles", {})
+    nodes = spec.get("nodes", [])
+    edges = spec.get("edges", [])
+    title = spec.get("title")
+    lines = []
+
+    # Preamble
+    lines.append(r"\documentclass[tikz,border=" + str(border) + r"pt]{standalone}")
+    lines.append(r"\usepackage{tikz}")
+    lines.append(r"\usetikzlibrary{graphs,graphdrawing,arrows.meta}")
+    lines.append(r"\usegdlibrary{layered,force,routing}")
+    lines.append("")
+    lines.append(ACADEMIC_COLORS)
+    lines.append("")
+    lines.append(r"\begin{document}")
+
+    # Title
+    if title:
+        lines.append(r"\begin{center}")
+        lines.append(r"{\Large\bfseries\sffamily " + title["text"] + r"}")
+        if title.get("subtitle"):
+            lines.append(r"\par\footnotesize\sffamily\color{acaGreyLine} " + title["subtitle"])
+        lines.append(r"\end{center}")
+        lines.append(r"\vspace{0.5cm}")
+
+    # Style definitions
+    lines.append(r"\tikzset{")
+    for sname, sdef in styles.items():
+        fill = sdef.get("fill", "white")
+        draw = sdef.get("draw", "black")
+        rounded = sdef.get("rounded", 3)
+        font = sdef.get("font", "footnotesize/sffamily")
+        inner = sdef.get("inner_sep", 6)
+        font_cmd = "\\" + font.replace("/", "\\")
+        lines.append(f"  {sname}/.style={{rectangle,rounded corners={rounded}pt,"
+                     f"align=center,font={font_cmd},inner sep={inner}pt,"
+                     f"fill={fill},draw={draw}}},")
+    lines.append("  lbl/.style={font=\\scriptsize\\itshape\\color{black!45}},    ")
+    lines.append("}")
+
+    # Graph
+    lines.append(r"\begin{tikzpicture}")
+    lines.append(r"\graph[")
+    lines.append(r"  layered layout,")
+    lines.append(r"  grow=down,")
+    lines.append(r"  level distance=0.6cm,")
+    lines.append(r"  sibling distance=1.0cm,")
+    lines.append(r"  nodes={inner sep=6pt,align=center},")
+    lines.append(r"  edges={->,>=Stealth,thick,color=black!55},")
+    lines.append(r"] {")
+
+    # Group nodes by layer
+    layers = {}
+    for n in nodes:
+        layer = n.get("layer", 0)
+        if layer not in layers:
+            layers[layer] = []
+        layers[layer].append(n)
+
+    # Output layer groups (lualatex syntax: layer1 -> layer2 means layered layout)
+    prev_layer_nodes = []
+    for layer_idx in sorted(layers.keys()):
+        layer_nodes = layers[layer_idx]
+        ids = [f'{n["id"]}/"{n["text"]}" [{n["style"]}]' for n in layer_nodes]
+        if prev_layer_nodes:
+            arrow = "->"
+            # Connect each previous node to each next node in the group
+            for pn in prev_layer_nodes:
+                for ln in layer_nodes:
+                    pass  # graphdrawing handles this
+        lines.append("  " + ", ".join(ids))
+        prev_layer_nodes = [n['id'] for n in layer_nodes]
+
+    # Edges
+    for e in edges:
+        fid = e["from"]
+        tid = e["to"]
+        style = e.get("style", "")
+        label = e.get("label", "").replace("$", r"\$").replace("→", "->")
+        if label and style:
+            lines.append(f'  ({fid}) ->["{label}", {style}] ({tid});')
+        elif label:
+            lines.append(f'  ({fid}) ->["{label}"] ({tid});')
+        elif style:
+            lines.append(f'  ({fid}) ->[{style}] ({tid});')
+        else:
+            lines.append(f'  ({fid}) -> ({tid});')
+
+    lines.append("};")
+    lines.append(r"\end{tikzpicture}")
+    lines.append(r"\end{document}")
+
+    return "\n".join(lines)
+
+
 # ─── Main ───
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python layout-engine.py spec.json [--compile]")
-        print("       python layout-engine.py spec.json > output.tex")
+        print("Usage:")
+        print("  python layout-engine.py spec.json [--compile] [--output file.tex]")
+        print("  python layout-engine.py spec.json --mode graph  # graphdrawing mode")
         sys.exit(1)
+
+    # Determine mode
+    mode = "abs"
+    args = sys.argv[1:]
+    if "--mode" in args:
+        idx = args.index("--mode")
+        if idx + 1 < len(args):
+            mode = args[idx + 1]
+            args.pop(idx + 1)
+            args.pop(idx)
+    sys.argv = [sys.argv[0]] + args  # reset for remaining parsing
 
     with open(sys.argv[1], "r", encoding="utf-8") as f:
         spec = json.load(f)
+
+    if mode == "graph":
+        tex = generate_graphdrawing_tex(spec)
+        out_tex = spec.get("output", "layout_graph.tex")
+        if "--output" in sys.argv:
+            idx = sys.argv.index("--output")
+            if idx + 1 < len(sys.argv):
+                out_tex = sys.argv[idx + 1]
+        with open(out_tex, "w", encoding="utf-8") as f:
+            f.write(tex)
+        print(f"% Graphdrawing mode: wrote {out_tex}", file=sys.stderr)
+        if "--compile" in sys.argv:
+            subprocess.run(["lualatex", "-interaction=nonstopmode", out_tex],
+                           check=True, timeout=120,
+                           cwd=os.path.dirname(os.path.abspath(out_tex)))
+            print(f"% Compiled with lualatex", file=sys.stderr)
+        else:
+            print(tex)
+        return
 
     nodes, meta, styles = build_spec(spec)
     tex = generate_tex(nodes, meta, styles, spec)

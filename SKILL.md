@@ -71,21 +71,21 @@ Say `/tikz-figure-skill Draw a 3-layer system architecture` and the skill will:
 
 1. **Env check** — auto-run `scripts/check-env.py`, detect LaTeX/Python/fonts
 2. **Analyze** — output drawing plan with module list + layout strategy
-3. **Generate** — produce TikZ code with academic color scheme
-4. **Validate** — `tikz-validator.py` (10 checks), if line-crossing detected → auto-call `tikz-path-router.py --auto-fix`
-5. **Compile** — pdflatex (or lualatex for graphdrawing), auto-retry on failure (max 3)
+3. **Generate** — produce TikZ code. Simple diagrams: absolute coords (pdflatex). Complex diagrams (>15 nodes or cross-column edges): `\graph` syntax (lualatex + graphdrawing auto-layout + auto edge routing).
+4. **Validate** — `tikz-validator.py` (10 checks)
+5. **Compile** — lualatex (default, for graphdrawing support) or pdflatex fallback, auto-retry on failure (max 3)
 6. **Post-check** — `pdf-overlap-checker.py`, if reference image exists → auto-call `figure-diff.py`
 7. **Deliver** — .tex + .pdf + .png + validation report
 
 ## Output Modes
 
-| Mode | Trigger | Compile | Validate | Engines |
-|------|---------|---------|----------|---------|
-| `--draft` | Quick preview | 1 pass, skip bibtex | Skip validation | pdflatex only |
-| `--final` (default) | Production quality | 2 passes | Full 10 checks + PDF overlap | pdflatex or lualatex |
-| `--data` | CSV-driven charts | 1 pass | Data-specific checks | pdflatex |
+| Mode | Trigger | Compile | Validate | Engine |
+|------|---------|---------|----------|--------|
+| `--draft` | Quick preview | 1 pass | Skip | pdflatex |
+| `--final` (default) | Production | 2 passes | Full 10 + PDF | **lualatex** (graphdrawing) |
+| `--data` | CSV charts | 1 pass | Data checks | pdflatex |
 
-Modes auto-select based on context. Complex architectures (>15 nodes) default to LuaLaTeX graphdrawing.
+Default engine is **lualatex** for automatic graphdrawing layout and edge routing. Falls back to pdflatex if lualatex unavailable (losing graphdrawing features).
 
 ## Environment Check (auto-run on skill startup)
 
