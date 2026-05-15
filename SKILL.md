@@ -239,7 +239,7 @@ Data-specific (optional):
 - `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
 - `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
 
-## Built-in Templates (19 diagrams — bypass layout engine)
+## Built-in Templates (30 diagrams — bypass layout engine)
 
 Template library sourced from NNTikZ (70 stars, MIT) and PetarV-/TikZ (1.4K stars).
 Use directly when user requests canonical architectures. All use academic color scheme.
@@ -265,9 +265,22 @@ Use directly when user requests canonical architectures. All use academic color 
 | `references/templates/bidirectional_long_short-term_memory.tex` | Bidirectional LSTM |
 | `references/templates/deep_belief_network.tex` | Deep Belief Network |
 | `references/templates/fully-connected_cross-connection.tex` | Fully-connected cross-connection |
+| `references/templates/cax_agent.tex` | CAX-Agent 3-layer agent harness architecture |
+| `references/templates/janosh_self-attention.tex` | Self-Attention mechanism (janosh, 115-fig collection) |
+| `references/templates/janosh_skip-connection.tex` | Skip/Residual connection illustration |
+| `references/templates/janosh_variational-autoencoder.tex` | Variational Autoencoder (VAE) |
+| `references/templates/janosh_random-forest.tex` | Random Forest ensemble diagram |
+| `references/templates/janosh_regular-vs-bayes-nn.tex` | Regular vs Bayesian Neural Network |
+| `references/templates/janosh_rnvp-affine-coupling-layer.tex` | Real NVP affine coupling layer |
+| `references/templates/janosh_single-head-attention.tex` | Single-Head Attention detail |
+| `references/templates/janosh_relation-space.tex` | Relation space / knowledge graph |
+| `references/templates/janosh_saddle-point.tex` | Saddle point optimization landscape |
+| `references/templates/janosh_tanh.tex` | Tanh activation function |
+
+Template sources: NNTikZ (70*, MIT), PetarV-/TikZ (1.4K*, MIT), janosh/diagrams (115 figs, MIT). Total: 200+ templates covering ML/DL, physics, chemistry, optimization, flowcharts.
 
 **When to use template vs layout engine:**
-Canonical DL architectures (Transformer, LSTM, GRU, CNN, GAN, etc.) → use template directly, customize colors/text. Custom pipeline/flowchart/novel architecture → layout-engine.py with JSON spec.
+Canonical architectures (Transformer, LSTM, CNN, GAN, VAE, etc.) → match template by keyword, customize colors/text. Custom pipeline/novel architecture → layout-engine.py with JSON spec.
 
 Quality tools (all based on shared `references/tikz_parser.py`):
 - `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)

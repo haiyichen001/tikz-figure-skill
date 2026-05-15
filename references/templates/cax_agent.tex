@@ -1,0 +1,91 @@
+\documentclass[tikz,border=20pt]{standalone}
+\usepackage{tikz,amsmath,amssymb}
+\usetikzlibrary{arrows.meta,backgrounds}
+
+\definecolor{acaBlueLine}{HTML}{6080B0}
+\definecolor{acaBlueFill}{HTML}{DBEAFE}
+\definecolor{acaGreenLine}{HTML}{30A060}
+\definecolor{acaGreenFill}{HTML}{A0D0A0}
+\definecolor{acaOrangeLine}{HTML}{D06020}
+\definecolor{acaOrangeFill}{HTML}{FFE6CC}
+\definecolor{acaPurpleLine}{HTML}{6020D0}
+\definecolor{acaPurpleFill}{HTML}{E1D5E7}
+\definecolor{acaRedLine}{HTML}{B05050}
+\definecolor{acaRedFill}{HTML}{F8CECC}
+\definecolor{acaGreyLine}{HTML}{666666}
+\definecolor{acaGreyFill}{HTML}{F5F5F5}
+\pgfdeclarelayer{bg}
+\pgfsetlayers{bg,main}
+
+\begin{document}
+\begin{tikzpicture}[
+  >={Stealth},line cap=round,
+  every node/.style={outer sep=5pt},
+]
+\node[font=\Large\bfseries\sffamily,align=center] at (17.3,1.5) {CAX-Agent System Architecture};
+\node[font=\footnotesize\sffamily,color=acaGreyLine] at (17.3,0.7) {Three-Layer Agent Harness for Reliable APDL Automation};
+\tikzset{
+  llm/.style={rectangle,rounded corners=4pt,align=center,font=\footnotesize\bfseries\sffamily,inner sep=8pt,fill=acaBlueFill,draw=acaBlueLine},
+  llm_sub/.style={rectangle,rounded corners=3pt,align=center,font=\footnotesize\sffamily,inner sep=7pt,fill=acaBlueFill!60,draw=acaBlueLine},
+  harness/.style={rectangle,rounded corners=6pt,align=center,font=\footnotesize\bfseries\sffamily,inner sep=10pt,fill=acaGreenFill,draw=acaGreenLine},
+  harness_sub/.style={rectangle,rounded corners=3pt,align=center,font=\footnotesize\sffamily,inner sep=7pt,fill=acaGreenFill!60,draw=acaGreenLine},
+  recovery/.style={rectangle,rounded corners=3pt,align=center,font=\tiny\sffamily,inner sep=5pt,fill=acaOrangeFill,draw=acaOrangeLine},
+  solver/.style={rectangle,rounded corners=4pt,align=center,font=\footnotesize\bfseries\sffamily,inner sep=8pt,fill=acaRedFill,draw=acaRedLine},
+  solver_sub/.style={rectangle,rounded corners=3pt,align=center,font=\footnotesize\sffamily,inner sep=7pt,fill=acaRedFill!60,draw=acaRedLine},
+  output/.style={rectangle,rounded corners=4pt,align=center,font=\footnotesize\bfseries\sffamily,inner sep=8pt,fill=acaPurpleFill,draw=acaPurpleLine},
+}
+
+% === Nodes ===
+\node[llm] (prompt) at (0.00,0.00) {User Prompt};
+\node[llm_sub] (router) at (0.00,-1.65) {Routing\\FastAPI Module Registry};
+\node[llm_sub] (local) at (0.00,-3.39) {Local LLM\\Qwen-27B, first-pass};
+\node[llm_sub] (external) at (0.00,-5.12) {External LLM API\\Claude Sonnet 4.6};
+\node[harness_sub] (ctx) at (7.00,0.00) {Context Manager\\Compress\\Trim\\Collapse};
+\node[harness_sub] (tool) at (7.00,-1.95) {Tool Pipeline\\Validate -> Permit -> Execute};
+\node[harness_sub] (state) at (7.00,-3.68) {State Tracker\\Message Pairing Invariant};
+\node[harness] (orch) at (13.50,0.00) {Orchestrator Core\\ReAct Loop (while true)\\Retry Budget\\Stop Control\\Execution Trace\\Checkpoint};
+\node[harness_sub] (guard) at (20.50,0.00) {Exception Guard\\Withhold & Self-Repair};
+\node[recovery] (l1) at (20.50,-1.55) {L1: Rule Patch (free)};
+\node[recovery] (l2) at (20.50,-2.92) {L2: LLM Regen (cheap)};
+\node[recovery] (l3) at (20.50,-4.29) {L3: Context Enrich (paid)};
+\node[recovery] (l4) at (20.50,-5.66) {L4: Human Escalation};
+\node[solver] (mapdl) at (28.00,0.00) {MAPDL Engine\\PyMAPDL\\CLI\\Fallback};
+\node[solver_sub] (errlog) at (28.00,-1.98) {Error Log Extractor\\meshing, convergence};
+\node[output] (out_img) at (35.00,0.00) {Post-Processing\\Image Output};
+
+% === Edges ===
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (prompt.south) -- (router.north);
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (router.south) -- (local.north) node[midway,above,font=\tiny\sffamily,color=acaGreyLine] {dispatch};
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (local.south) -- (external.north) node[midway,above,font=\tiny\sffamily,color=acaGreyLine] {escalate};
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (external.east) -- ++(0.4,0) |- (orch.west);
+\draw[line width=1.0pt,black!55,rounded corners=4pt] (ctx.east) -- (orch.west);
+\draw[line width=1.0pt,black!55,rounded corners=4pt] (tool.east) -- ++(0.4,0) |- (orch.west);
+\draw[line width=1.0pt,black!55,rounded corners=4pt] (state.east) -- ++(0.4,0) |- (orch.west);
+\draw[line width=1.0pt,black!55,rounded corners=4pt] (orch.east) -- (guard.west);
+\draw[line width=0.8pt,acaGreyLine!50,rounded corners=4pt] (guard.south) -- (l1.north);
+\draw[line width=0.8pt,acaGreyLine!50,rounded corners=4pt] (l1.south) -- (l2.north);
+\draw[line width=0.8pt,acaGreyLine!50,rounded corners=4pt] (l2.south) -- (l3.north);
+\draw[line width=0.8pt,acaGreyLine!50,rounded corners=4pt] (l3.south) -- (l4.north);
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (orch.east) -- (mapdl.west) node[midway,above,font=\tiny\sffamily,color=acaGreyLine] {execute APDL};
+\draw[line width=1.0pt,black!55,rounded corners=4pt] (mapdl.south) -- (errlog.north);
+\draw[line width=1.5pt,acaOrangeLine,rounded corners=6pt] (mapdl.east) -- (out_img.west);
+\draw[line width=0.8pt,dashed,acaRedLine!60,rounded corners=6pt] (errlog.west) -- ++(-0.4,0) |- (l1.east) node[midway,above,font=\tiny\sffamily,color=acaGreyLine] {error feedback};
+\draw[line width=0.8pt,dashed,acaRedLine!60,rounded corners=6pt] (l4.west) -- ++(-0.4,0) |- (orch.east) node[midway,above,font=\tiny\sffamily,color=acaGreyLine] {bounded retries};
+
+% === Zones ===
+\begin{pgfonlayer}{bg}
+  \fill[acaBlueFill!15,rounded corners=6pt] (-2.9,-6.4) rectangle (2.9,2.2);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (-2.4,2.1) {LLM Service Layer};
+  \fill[acaGreenFill!15,rounded corners=6pt] (3.7,-5.0) rectangle (10.3,2.5);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (4.2,2.4) {Agent Harness Layer};
+  \fill[acaPurpleFill!15,rounded corners=6pt] (10.3,-1.9) rectangle (16.7,2.9);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (10.8,2.7) {Orchestrator};
+  \fill[acaOrangeFill!15,rounded corners=6pt] (17.6,-6.8) rectangle (23.4,2.3);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (18.1,2.2) {Recovery};
+  \fill[acaRedFill!15,rounded corners=6pt] (25.3,-3.3) rectangle (30.7,2.6);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (25.8,2.4) {Solver Backend};
+  \fill[acaBlueFill!15,rounded corners=6pt] (32.4,-1.4) rectangle (37.6,2.4);
+  \node[font=\tiny\sffamily\bfseries,acaGreyLine] at (32.9,2.2) {Output};
+\end{pgfonlayer}
+\end{tikzpicture}
+\end{document}

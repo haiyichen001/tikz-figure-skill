@@ -1,0 +1,21 @@
+\documentclass{standalone}
+
+\usepackage{tikz-feynman}
+
+\begin{document}
+$\displaystyle\partial_t V_g
+  = \raisebox{0.5ex}{\feynmandiagram [inline=(a.base)] {
+  a [dot] -- [charged boson, quarter left, edge label=$p$] b
+  -- [photon, quarter left] c [dot]
+  -- [charged boson, quarter left, edge label=$p$] d [crossed dot]
+  -- [charged boson, quarter left, edge label=$p$] a,
+  f1 -- [photon] c,
+  i1 -- [photon] a,
+  };}
+  \enskip + \enskip
+  \raisebox{0.5ex}{\feynmandiagram [inline=(a.base)] {
+  {i1, i2} -- [photon] a [dot]
+  -- [charged boson, half left, edge label=$p$] b [crossed dot]
+  -- [charged boson, half left, edge label=$p$] a,
+  };}$
+\end{document}
