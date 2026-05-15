@@ -1,16 +1,20 @@
 ---
 name: tikz-figure-skill
-version: 1.2.0
+version: 1.3.0
 author: haiyichen
 description: |
-  Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection.
-  Combines AI-driven TikZ code generation, pre-compilation mathematical gap checks
-  (Bezier curves, label spacing, bounding boxes), post-compilation PDF overlap validation,
-  and PGFPlots data charts from CSV. Supports LuaLaTeX graphdrawing auto-layout for
-  complex graphs. Zero-collision academic figures by default.
-  Triggers when user says: 画论文图, 画架构图, 画流程图, TikZ画图, 论文配图,
-  tikz diagram, latex figure, 生成tikz, 技术路线图, draw architecture diagram,
-  make a figure, generate TikZ code, 画个图, 帮我画图.
+  Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
+  PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Zero-collision academic
+  figures by default.
+when_to_use: |
+  Use when the user explicitly asks to create a figure, diagram, chart, or illustration
+  for an academic paper, thesis, report, or publication. Triggers on: 画论文图, 画架构图,
+  画流程图, TikZ画图, 论文配图, tikz diagram, latex figure, 生成tikz, 技术路线图,
+  draw architecture diagram, make a figure for my paper, generate TikZ code, 画个图,
+  帮我画图, pgfplots chart from data, CSV to bar chart, draw.io for paper.
+  Do NOT trigger on: quick sketch, whiteboard doodle, "show me an example", general
+  questions about TikZ syntax (use WebSearch instead), or user explicitly wanting a
+  raster/bitmap tool like Photoshop/Figma/Canva.
 allowed-tools:
   - Bash(pdflatex*)
   - Bash(lualatex*)
@@ -43,6 +47,23 @@ context: fork
 # tikz-figure-skill
 
 Generate publication-quality LaTeX/TikZ diagrams with automated collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Works cross-platform (macOS/Linux/Windows).
+
+## When to Use
+
+- User explicitly asks to create a diagram, figure, chart, or illustration
+- The output is for a paper, thesis, report, slide deck, or publication
+- User provides a paper excerpt, data file (CSV), or architectural description
+- User wants TikZ code, pgfplots chart, draw.io diagram, or LuaLaTeX graphdrawing
+
+## When NOT to Use
+
+- **Quick sketch / whiteboard doodle** — this skill does full validation pipeline, overkill for napkin sketches
+- **"Show me an example of X"** — user is browsing, not requesting a figure
+- **General TikZ syntax questions** — use WebSearch, don't load the entire skill
+- **Raster/bitmap tools** — user explicitly wants Photoshop, Figma, Canva, or similar
+- **Non-academic graphics** — memes, social media banners, casual illustrations
+- **Data analysis without visualization** — user wants statistics, not charts
+- **Already-rendered figure review** — user has a PNG and wants feedback on it (not generating)
 
 ## Quickstart
 
