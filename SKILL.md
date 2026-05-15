@@ -239,12 +239,35 @@ Data-specific (optional):
 - `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
 - `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
 
-Built-in templates (use directly — bypass layout engine):
-- `references/templates/transformer.tex` — classic "Attention Is All You Need" Transformer architecture (NNTikZ)
-- `references/templates/multihead_attention.tex` — Multi-Head Attention mechanism detail
+## Built-in Templates (19 diagrams — bypass layout engine)
 
-**When to use a built-in template vs the layout engine:**
-Transformer, attention, RNN, LSTM, GRU, and other canonical deep learning architectures have well-established visual conventions (vertical stacks, curved residual arrows, Nx wrapping boxes). Use the built-in templates directly for these. Use the layout engine for custom pipeline/flowchart/architecture diagrams that don't have a standard visual form.
+Template library sourced from NNTikZ (70 stars, MIT) and PetarV-/TikZ (1.4K stars).
+Use directly when user requests canonical architectures. All use academic color scheme.
+
+| Template File | Diagram |
+|---|---|
+| `references/templates/transformer.tex` | Transformer Encoder-Decoder (Attention Is All You Need) |
+| `references/templates/multihead_attention.tex` | Multi-Head Attention mechanism detail |
+| `references/templates/hybrid_transformer_mamba.tex` | Hybrid: Transformer Encoder + Mamba Decoder |
+| `references/templates/encoder_only.tex` | Encoder-only Transformer (BERT-style) |
+| `references/templates/decoder_only.tex` | Decoder-only Transformer (GPT-style) |
+| `references/templates/rnn_encoder_decoder_sutskever.tex` | RNN Seq2Seq with Attention |
+| `references/templates/lstm.tex` | LSTM cell internal structure |
+| `references/templates/gru.tex` | GRU cell internal structure |
+| `references/templates/rnn.tex` | Recurrent Neural Network unrolled |
+| `references/templates/neural_network.tex` | Feedforward neural network |
+| `references/templates/dropout.tex` | Dropout regularization illustration |
+| `references/templates/gat_layer.tex` | Graph Attention Network layer |
+| `references/templates/2d_convolution.tex` | 2D Convolution operation |
+| `references/templates/convolutional_autoencoder.tex` | Convolutional Autoencoder |
+| `references/templates/cyclegan.tex` | CycleGAN architecture |
+| `references/templates/1d-2d_cross-connection.tex` | 1D-2D cross-connection |
+| `references/templates/bidirectional_long_short-term_memory.tex` | Bidirectional LSTM |
+| `references/templates/deep_belief_network.tex` | Deep Belief Network |
+| `references/templates/fully-connected_cross-connection.tex` | Fully-connected cross-connection |
+
+**When to use template vs layout engine:**
+Canonical DL architectures (Transformer, LSTM, GRU, CNN, GAN, etc.) → use template directly, customize colors/text. Custom pipeline/flowchart/novel architecture → layout-engine.py with JSON spec.
 
 Quality tools (all based on shared `references/tikz_parser.py`):
 - `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)
