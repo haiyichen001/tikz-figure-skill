@@ -400,6 +400,8 @@ python3 references/figure-diff.py <reference.png> <replicated.png>
 | 分层技术路线图 | 研究背景→问题提出→研究框架→技术路线→结论（draw.io 模式F） | 毕业论文技术路线图、开题报告路线图 |
 | 多实例汇聚图 | 横排三列→汇聚 | 联邦学习、分布式系统 |
 | 数据可视化混合图 | 框图内嵌波形/柱状图/热力图 | 信号处理、深度学习注意力、频谱分析 |
+| **PGFPlots 数据图表** | **CSV → `\addplot table`** | **柱状图、折线图、散点+误差棒、groupplot、热力图、箱线图 — 字体自动匹配论文** |
+| **Graphdrawing 自动布局** | **LuaLaTeX 编译时算法计算** | **>15 节点复杂图：分层/力导向/环形/树形布局 + edge routing 自动避障** |
 
 ## 统一配色
 
@@ -600,6 +602,8 @@ mem_cell/.style={rectangle, draw=drawGreyLine!60, fill=drawGreyFill!50,
 | 含数据可视化的图 | `references/data-visualization.md` | 波形、频谱柱状图、热力图矩阵、前后对比 |
 | **所有 TikZ 图（必加载）** | `references/visual-patterns.md` | **9 种可复用的 TikZ 绘制模式：hero 子结构、热力图、折线图、柱状图、特征矩阵、网络图、雷达图、Stage 标签、Pipeline 总结条。每张图必须用 ≥3 种模式** |
 | draw.io 科研展示图 | `references/drawio-modes.md` | 6 种模式（A-F）、视觉花样库、XML 骨架 |
+| **数据驱动图表（CSV → pgfplots）** | `references/pgfplots-templates.md` | **6 个模板：柱状图、折线图、散点+误差棒、groupplot 多面板、热力图矩阵、箱线图。自动从 CSV/inline data 生成，字体匹配论文** |
+| **复杂图自动布局（>15 节点）** | `references/graphdrawing-guide.md` | **LuaLaTeX graphdrawing：分层/力导向/环形/树形布局 + edge routing 自动避障。节点数阈值触发切换** |
 | 步骤⑤评估打分 | `references/review-checklist.md` | 视觉审查清单、设计师审查、44项检查、评分标准、失败模式路由 |
 | 步骤⑤参考图对比 | `references/figure-diff.py` | SSIM 评分 + 3×3 区域差异 + 三栏对比图。依赖 opencv-python, scikit-image |
 | **碰撞检测（编译前必加载）** | `references/collision-detection.md` | **Bezier 曲线碰撞公式、标签间隙计算、边界间距表、边缘裁剪规则。防止 pdflatex 无警告静默错误** |

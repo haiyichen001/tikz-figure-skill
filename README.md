@@ -5,6 +5,8 @@ A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with bu
 ## Features
 
 - **AI-driven TikZ generation** -- describe your diagram in natural language, get compilable `.tex` code
+- **PGFPlots data charts** -- 6 templates for bar/line/scatter/heatmap/box plots from CSV, with academic styling
+- **Graphdrawing auto-layout** -- LuaLaTeX algorithms for >15 node graphs: layered, force-based, circular, tree + edge routing
 - **Pre-compilation collision detection** -- 10 mathematical checks before `pdflatex`: Bezier curve arcs, label-to-shape gaps, edge clipping, arrow direction reversal, and more
 - **Post-compilation PDF validation** -- `pdf-overlap-checker.py` detects text overlaps, line-crossings, off-center content, and text-line intersections in rendered PDF
 - **Dual output formats** -- TikZ for papers (+ CJK support via `xelatex`) and draw.io XML for presentations
@@ -35,10 +37,34 @@ The skill will:
 4. Compile with `pdflatex`, run `pdf-overlap-checker.py`
 5. Convert to PNG and self-score, iterating until collision-free
 
-## Collision Detection (10 checks)
+## Collision Detection (10 checks + Auto-Layout)
 
 | # | Check | Detects |
 |---|-------|---------|
+| 1 | Micro-slopes | Diagonal lines that should be axis-aligned |
+| 2 | Direction reversal | Arrow midpoints that overshoot the target |
+| 3 | Container overflow | Nodes beyond zone boundaries |
+| 4 | Label collision | Overlapping node bounding boxes |
+| 5 | Arrow length | Arrows too short (<1.2cm) or too long (>4cm) |
+| 6 | **Bezier collision** | Labels inside bent arrow arcs (new) |
+| 7 | **Label gaps** | Text too wide for inter-node gap (new) |
+| 8 | **Edge clipping** | Elements <0.5cm from canvas edge (new) |
+| 9 | **Boundary clearance** | Labels <0.4cm from adjacent shapes (new) |
+| 10 | PDF post-checks | Text overlap, line crossing, off-center, text-line intersection |
+| 11 | **Graphdrawing** | LuaLaTeX auto-layout: layered/force/circular/tree + edge routing (new) |
+
+## PGFPlots Data Charts (new)
+
+| Template | Chart Type | Input |
+|----------|-----------|-------|
+| Template 1 | Bar chart | CSV + column names |
+| Template 2 | Line plot | CSV + x/y columns |
+| Template 3 | Scatter + error bars | CSV + y error columns |
+| Template 4 | Groupplot (multi-panel) | Multiple CSV files |
+| Template 5 | Heatmap matrix | Inline data table |
+| Template 6 | Box plot | Pre-computed quartiles |
+
+All templates use academic color palette and enforce chart design rules (no chartjunk, grey grid, matching fonts).
 | 1 | Micro-slopes | Diagonal lines that should be axis-aligned |
 | 2 | Direction reversal | Arrow midpoints that overshoot the target |
 | 3 | Container overflow | Nodes beyond zone boundaries |
@@ -57,6 +83,8 @@ tikz-figure-skill/
   SKILL.md                          -- Main skill definition
   references/
     collision-detection.md           -- Bezier formulas, clearance tables
+    pgfplots-templates.md            -- 6 CSV-driven chart templates (new)
+    graphdrawing-guide.md            -- LuaLaTeX auto-layout guide (new)
     tikz-validator.py                -- Pre-compilation 10-check validator
     pdf-overlap-checker.py           -- Post-compilation PDF overlap detector
     tikz-global-rules.md             -- TikZ coding conventions
