@@ -213,7 +213,7 @@ Default to TikZ. Use draw.io only when: user requests it, needs heavy gradients/
 
 All TikZ figures must load:
 - `references/collision-detection.md` — pre-compile collision rules + Bezier formulas
-- `references/tikz-coding-rules.md` — mandatory coding conventions
+- `references/tikz-coding-rules.md` — **Rule 0: absolute coordinates only. No relative positioning.**
 - `references/visual-patterns.md` — reusable drawing patterns (>=3 per figure)
 - `references/design-philosophy.md` — design principles + quality gates
 
