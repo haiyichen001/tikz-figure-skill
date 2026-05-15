@@ -166,9 +166,9 @@ def generate_tex(all_nodes, meta, spec):
     styles = spec.get("styles",{})
     edges = spec.get("edges",[])
     edge_types = spec.get("edge_types",{
-        "main":"thick,acaOrangeLine,rounded corners=6pt,shorten >=5pt,shorten <=5pt",
-        "flow":"thick,black!55,rounded corners=4pt,shorten >=5pt,shorten <=5pt",
-        "feedback":"dashed,acaRedLine!60,rounded corners=6pt,shorten >=5pt,shorten <=5pt"})
+        "main":"thick,acaOrangeLine,rounded corners=6pt",
+        "flow":"thick,black!55,rounded corners=4pt",
+        "feedback":"dashed,acaRedLine!60,rounded corners=6pt"})
     title = spec.get("title")
     groups = spec.get("groups",[])
     node_map = {n["id"]:n for n in all_nodes}
@@ -232,20 +232,23 @@ def generate_tex(all_nodes, meta, spec):
         sw, sh = src["width"], src["height"]
         dw, dh = dst["width"], dst["height"]
 
-        # Straight when aligned, L-shaped only when y differs
+        # Straight when aligned, L-shaped only when y differs.
+        # shorten only for horizontal/cross-column (gap is large).
+        # No shorten for vertical (row_gap=0.3cm is already tight).
+        is_vert = abs(sx - dx) < 0.5
+        gap_shorten = ",shorten >=4pt,shorten <=4pt" if not is_vert else ""
         lbl = f" node[midway,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
-        if abs(sx - dx) < 0.5:
+        if is_vert:
             lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north){lbl};")
         elif abs(sy - dy) < 0.3:
-            # Same row: straight horizontal
             if sx < dx:
-                lines.append(f"\\draw[{estyle}] ({fid}.east) -- ({tid}.west){lbl};")
+                lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.east) -- ({tid}.west){lbl};")
             else:
-                lines.append(f"\\draw[{estyle}] ({fid}.west) -- ({tid}.east){lbl};")
+                lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.west) -- ({tid}.east){lbl};")
         elif sx < dx:
-            lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({tid}.west){lbl};")
+            lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.east) -| ({tid}.west){lbl};")
         else:
-            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
+            lines.append(f"\\draw[{estyle}{gap_shorten}] ({fid}.west) -| ({tid}.east){lbl};")
 
     # Zone backgrounds
     if groups:
