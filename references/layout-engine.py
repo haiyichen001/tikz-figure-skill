@@ -232,37 +232,20 @@ def generate_tex(all_nodes, meta, spec):
         sw, sh = src["width"], src["height"]
         dw, dh = dst["width"], dst["height"]
 
-        # Determine routing
+        # Three cases only. -| and |- create perfect orthogonal L-shapes.
+        # rounded corners on the edge style makes the single bend smooth.
         if abs(sx - dx) < 0.5:
-            # Same column: straight down
-            lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north)")
-            if label:
-                lines.append(f"  node[midway,right,font=\\tiny\\sffamily] {{{label}}};")
-            else:
-                lines.append(";")
-        elif sy > dy:
-            # Source below target (feedback/backward): route via right rail
-            mid_y = (sy + dy) / 2
-            lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({rail:.1f},{sy:.1f})")
-            lines.append(f"  -- ({rail:.1f},{mid_y:.1f}) -- ({rail:.1f},{dy:.1f}) -| ({tid}.east)")
-            if label:
-                lines.append(f"  node[pos=0.5,right,font=\\tiny\\sffamily] {{{label}}};")
-            else:
-                lines.append(";")
+            # Same column: straight vertical
+            lbl = f" node[midway,right,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
+            lines.append(f"\\draw[{estyle}] ({fid}.south) -- ({tid}.north){lbl};")
+        elif sx > dx:
+            # Source right of target: exit west, enter east
+            lbl = f" node[pos=0.5,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
+            lines.append(f"\\draw[{estyle}] ({fid}.west) -| ({tid}.east){lbl};")
         else:
-            # Source above target (forward flow): orthogonal L-shape
-            mid_y = (sy + dy) / 2
-            if abs(sx - dx) > 5:
-                # Far apart: go right → rail → rail → target
-                lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({rail:.1f},{mid_y:.1f}) |- ({tid}.west)")
-            else:
-                # Close together: simple horizontal-then-vertical
-                mx = (sx + sw/2 + dx - dw/2) / 2
-                lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({dx:.1f},{mid_y:.1f}) -| ({tid}.west)")
-            if label:
-                lines.append(f"  node[pos=0.5,above,font=\\tiny\\sffamily] {{{label}}};")
-            else:
-                lines.append(";")
+            # Source left of target: exit east, enter west (normal forward flow)
+            lbl = f" node[pos=0.5,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}}" if label else ""
+            lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({tid}.west){lbl};")
 
     # Zone backgrounds
     if groups:
