@@ -11,7 +11,7 @@ when_to_use: |
   for an academic paper, thesis, report, or publication. Triggers on: 画论文图, 画架构图,
   画流程图, TikZ画图, 论文配图, tikz diagram, latex figure, 生成tikz, 技术路线图,
   draw architecture diagram, make a figure for my paper, generate TikZ code, 画个图,
-  帮我画图, pgfplots chart from data, CSV to bar chart, draw.io for paper.
+  帮我画图, pgfplots chart from data, CSV to bar chart.
   Do NOT trigger on: quick sketch, whiteboard doodle, "show me an example", general
   questions about TikZ syntax (use WebSearch instead), or user explicitly wanting a
   raster/bitmap tool like Photoshop/Figma/Canva.
@@ -106,7 +106,7 @@ Step 3 — Generate Code: TikZ `\graph` syntax `.tex`
     ↓
 Step 3.5b — Pre-compile Validate: run tikz-validator.py (10 checks)
     ↓
-Step 4 — Compile: pdflatex (or lualatex for graphdrawing)
+Step 4 — Compile: lualatex (auto graphdrawing layout + edge routing)
     ↓
 Step 5 — Post-compile Validate: run pdf-overlap-checker.py, render PNG, self-score
     ↓
@@ -125,7 +125,7 @@ If compilation fails, the skill does NOT ask the user to fix it. Instead:
 4. **Re-compile** — max 3 attempts per error category
 5. **Escalate** — if 3 attempts fail, report exact error + attempted fixes to user
 
-If collision validation fails, iterate on coordinates up to 3 rounds, then report remaining warnings.
+If collision validation fails, iterate on node grouping and edge structure up to 3 rounds, then report remaining warnings.
 
 ## Design Philosophy
 
@@ -238,19 +238,23 @@ Python scripts use `python` or `python3` based on platform auto-detection. Paths
 
 ## Quick Compile Templates
 
-### Minimal standalone TikZ (architecture)
+### Minimal standalone (graphdrawing)
 ```latex
 \documentclass[tikz,border=15pt]{standalone}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shadows}
-% Insert academic color definitions here
+\usepackage{tikz,amsmath,amssymb}
+\usetikzlibrary{graphs,graphdrawing,arrows.meta}
+\usegdlibrary{layered}
 \begin{document}
-\begin{tikzpicture}[
-    box/.style={rectangle,rounded corners=3pt,align=center,minimum height=0.85cm,
-        inner sep=8pt,line width=1.0pt,font=\footnotesize\sffamily},
-    arr/.style={->,>=Stealth,line width=1.0pt,color=black!60},
-]
-% Nodes and edges
+\begin{tikzpicture}[arr/.style={->,>=Stealth,thick,color=black!55}]
+% Style definitions
+\tikzset{box/.style={rectangle,rounded corners=4pt,align=center,
+    inner sep=8pt,font=\footnotesize\sffamily,draw=blue,fill=blue!10}}
+\graph[layered layout, grow=right,
+       level distance=2.5cm, sibling distance=1cm,
+       nodes={align=center,inner sep=6pt,font=\footnotesize\sffamily},
+       edges={arr}] {
+    input/"Input" [box] -> process/"Process" [box] -> output/"Output" [box];
+};
 \end{tikzpicture}
 \end{document}
 ```
@@ -277,7 +281,7 @@ Python scripts use `python` or `python3` based on platform auto-detection. Paths
 
 ```
 tikz-figure-skill/
-  SKILL.md                          -- Main skill definition (290 lines)
+  SKILL.md                          -- Main skill definition
   scripts/
     check-env.py                    -- Cross-platform dependency checker (auto-run)
   references/
@@ -287,8 +291,8 @@ tikz-figure-skill/
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
     figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
     design-philosophy.md            -- Core design principles + quality gates
-    tikz-coding-rules.md            -- Mandatory TikZ conventions
-    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column
+    tikz-coding-rules.md            -- Rule 0: graphdrawing syntax mandatory
+    layout-patterns.md              -- Sequence diagram style definitions
     visual-patterns.md              -- 9 reusable drawing patterns + font rules
     collision-detection.md          -- Bezier formulas, clearance tables
     pgfplots-templates.md           -- 6 CSV-driven chart templates
