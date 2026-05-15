@@ -99,7 +99,7 @@ def compute_layout(spec):
     styles = spec.get("styles",{})
     cfg = spec.get("layout",{})
     col_gap = cfg.get("column_gap",3.8)
-    row_gap = cfg.get("row_gap",0.3)
+    row_gap = cfg.get("row_gap",0.5)
     all_nodes = []
     x_positions = {}
     col_extents = {}  # col_idx -> (x, max_width, y_min, y_max)
@@ -188,7 +188,7 @@ def generate_tex(all_nodes, meta, spec):
     lines.append(r"\begin{document}")
     lines.append(r"\begin{tikzpicture}[")
     lines.append(r"  >={Stealth},line cap=round,")
-    lines.append(r"  every node/.style={outer sep=4pt},")
+    lines.append(r"  every node/.style={outer sep=3pt},")
     lines.append(r"]")
 
     # Title
