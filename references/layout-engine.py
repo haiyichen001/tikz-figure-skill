@@ -61,8 +61,8 @@ def generate(spec: dict) -> str:
     lines.append(r"\documentclass[tikz,border=" + str(border) + r"pt]{standalone}")
     lines.append(r"\usepackage{tikz}")
     lines.append(r"\usepackage{amsmath,amssymb}")
-    lines.append(r"\usetikzlibrary{graphs,graphdrawing,arrows.meta}")
-    lines.append(r"\usegdlibrary{layered}")
+    lines.append(r"\usetikzlibrary{graphs,graphdrawing,arrows.meta,bbox}")
+    lines.append(r"\usegdlibrary{layered,force}")
     lines.append("")
     lines.append(ACADEMIC_COLORS)
     lines.append("")
@@ -78,8 +78,15 @@ def generate(spec: dict) -> str:
                          + title["subtitle"] + r"};")
 
     # Style definitions
+    # TikZ reserved keys that conflict with style names
+    TIKZ_RESERVED = {"out", "in", "to", "edge", "node", "graph", "draw", "fill",
+                     "path", "scope", "pic", "label", "pin", "alias", "matrix",
+                     "align", "text", "font", "anchor", "scale", "rotate", "x", "y",
+                     "at", "name", "shape", "inner", "outer", "minimum", "maximum"}
     lines.append(r"\tikzset{")
     for sname, sdef in styles.items():
+        if sname in TIKZ_RESERVED:
+            sname = "s_" + sname  # prefix to avoid collision
         fill = sdef.get("fill", "white")
         draw = sdef.get("draw", "black")
         rounded = sdef.get("rounded", 3)
@@ -111,16 +118,25 @@ def generate(spec: dict) -> str:
 
     for layer_idx in sorted(layers.keys()):
         layer_nodes = layers[layer_idx]
-        ids = [f'{n["id"]}/"{n["text"]}" [{n["style"]}]' for n in layer_nodes]
+        ids = []
+        for n in layer_nodes:
+            # Convert | to LaTeX line break \\, escape special chars
+            txt = n["text"].replace("|", r"\\")
+            # Protect # and unbalanced braces
+            txt = txt.replace("#", "\\#")
+            st = n["style"]
+            if st in TIKZ_RESERVED:
+                st = "s_" + st
+            ids.append(f'{n["id"]}/"{txt}" [{st}]')
         lines.append("  " + ", ".join(ids) + ";")
 
     # Edges
     for e in edges:
         fid, tid = e["from"], e["to"]
         style = e.get("style", "")
-        label = e.get("label", "")
+        label = e.get("label", "").replace("|", r"\\")
         if label and style:
-            lines.append(f'  ({fid}) ->["{label}", {style}] ({tid});')
+            lines.append(f'  ({fid}) ->["{label}" {style}] ({tid});')
         elif label:
             lines.append(f'  ({fid}) ->["{label}"] ({tid});')
         elif style:
@@ -158,10 +174,20 @@ def main():
     print(f"Wrote: {out_tex}", file=sys.stderr)
 
     if "--compile" in sys.argv:
+        cwd = os.path.dirname(os.path.abspath(out_tex))
+        base = os.path.splitext(os.path.basename(out_tex))[0]
         subprocess.run(["lualatex", "-interaction=nonstopmode", out_tex],
-                       check=True, timeout=120,
-                       cwd=os.path.dirname(os.path.abspath(out_tex)))
-        print("Compiled with lualatex", file=sys.stderr)
+                       check=True, timeout=120, cwd=cwd)
+        # Auto-crop with pdfcrop if available
+        pdf = os.path.join(cwd, base + ".pdf")
+        cropped = os.path.join(cwd, base + "_cropped.pdf")
+        try:
+            subprocess.run(["pdfcrop", pdf, cropped],
+                           check=True, timeout=30, cwd=cwd)
+            os.replace(cropped, pdf)
+            print("Compiled + cropped with lualatex", file=sys.stderr)
+        except Exception:
+            print("Compiled with lualatex (pdfcrop not available)", file=sys.stderr)
 
 
 if __name__ == "__main__":
