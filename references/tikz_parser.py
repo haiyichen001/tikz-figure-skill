@@ -3,7 +3,7 @@
 Shared .tex parser for tikz-figure-skill tools.
 Extracts nodes, zones, connections, and coordinates from TikZ source.
 
-Used by: tikz-validator.py, tikz-path-router.py, pdf-overlap-checker.py
+Used by: tikz-validator.py, layout-engine.py, pdf-overlap-checker.py
 """
 
 import re

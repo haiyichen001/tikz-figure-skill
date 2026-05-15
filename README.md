@@ -8,7 +8,7 @@ A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with bu
 - **PGFPlots data charts** -- 6 templates for bar/line/scatter/heatmap/box plots from CSV
 - **Graphdrawing auto-layout** -- LuaLaTeX for >15 node graphs: layered/force/circular/tree + edge routing
 - **Collision detection (10 checks)** -- Bezier curve math, label gap formulas, edge clipping, boundary clearance
-- **Auto-fix pipeline** -- line-crossing triggers `tikz-path-router --auto-fix`, compile failures auto-retry
+- **Auto-fix pipeline** -- graphdrawing auto-routes edges, compile failures auto-retry
 - **Shared parser** -- `tikz_parser.py` used by all validation/routing tools, no duplicated code
 - **Cross-platform** -- macOS/Linux/Windows, `check-env.py` auto-runs on startup
 - **context: fork isolation** -- runs in subagent, doesn't pollute main session
@@ -95,7 +95,7 @@ tikz-figure-skill/
   references/
     tikz_parser.py                  -- Shared .tex parser (used by all tools)
     tikz-validator.py               -- Pre-compile 10-check validator (auto-run)
-    tikz-path-router.py             -- A* auto-routing, accepts --from-tex
+    layout-engine.py                -- JSON spec → \graph .tex generator
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
     figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
     design-philosophy.md            -- Core design principles + quality gates
@@ -116,9 +116,10 @@ tikz-figure-skill/
 
 ## Changelog
 
-- **v1.3** — Shared parser `tikz_parser.py` eliminates duplicate code across tools. `tikz-path-router` now accepts `--from-tex` and `--auto-fix`. `tikz-validator` rewritten with clean imports. `geometry-math.md` slimmed to English. SKILL.md: full auto-pipeline (check-env → validate → auto-fix-route → compile → overlap-check → figure-diff).
-- **v1.2.1** — Flattened references: 20 → 13 files (-35% files, -62% size)
-- **v1.2** — Full YAML frontmatter, `context: fork`, `check-env.py`, 3 modes, auto-retry
+- **v2.0** — Graphdrawing-only engine. Deleted abs mode (660→160 lines). Deleted `tikz-path-router.py` (graphdrawing handles routing). Removed all draw.io references. Cleaned redundant `layout-patterns.md` sections.
+- **v1.3** — Shared parser, tikz-path-router --from-tex, geometry-math slimmed
+- **v1.2.1** — Flattened references: 20 → 13 files
+- **v1.2** — Full YAML frontmatter, `context: fork`, `check-env.py`, auto-retry
 - **v1.1** — PGFPlots templates, graphdrawing guide, collision detection
 - **v1.0** — Initial release
 

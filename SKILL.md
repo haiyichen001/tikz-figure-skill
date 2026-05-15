@@ -1,6 +1,6 @@
 ---
 name: tikz-figure-skill
-version: 1.3.0
+version: 2.0.0
 author: haiyichen
 description: |
   Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
@@ -53,7 +53,7 @@ Generate publication-quality LaTeX/TikZ diagrams with automated collision detect
 - User explicitly asks to create a diagram, figure, chart, or illustration
 - The output is for a paper, thesis, report, slide deck, or publication
 - User provides a paper excerpt, data file (CSV), or architectural description
-- User wants TikZ code, pgfplots chart, draw.io diagram, or LuaLaTeX graphdrawing
+- User wants TikZ code, pgfplots chart, or LuaLaTeX graphdrawing
 
 ## When NOT to Use
 
@@ -102,7 +102,7 @@ Step 1 — Analyze & Plan: identify domain, extract modules, plan layout, choose
     ↓
 Step 2 — Load References: match chart type → load template + collision rules + patterns
     ↓
-Step 3 — Generate Code: TikZ .tex or draw.io .xml
+Step 3 — Generate Code: TikZ `\graph` syntax `.tex`
     ↓
 Step 3.5b — Pre-compile Validate: run tikz-validator.py (10 checks)
     ↓
@@ -163,18 +163,10 @@ elif node_count <= 40: lualatex, layered layout (dense)
 else:                  lualatex, spring layout + edge routing
 ```
 
-## Tool Boundaries
+## Output Format
 
-| Dimension | TikZ | draw.io |
-|-----------|------|---------|
-| Best for | Architecture, data flow, math, paper embedding | Roadmaps, decorative presentations |
-| Precise control | Absolute coords + relative positioning | Drag-edit, less precise |
-| CJK support | xelatex + fontspec | Native |
-| Math formulas | Native LaTeX | MathJax, mediocre |
-| Visual effects | Limited (no gradient, basic shadow) | Rich (gradient, shadow, 3D) |
-| Compile validation | xelatex/pdflatex + pdftoppm | drawio CLI → PDF → PNG |
-
-Default to TikZ. Use draw.io only when: user requests it, needs heavy gradients/3D, or for decorative presentation slides (not papers).
+Output is always standalone `.tex` with `\graph` syntax, compiled with lualatex.
+For data charts, output uses pgfplots (works with lualatex and pdflatex).
 
 ## Academic Color Scheme
 
@@ -207,7 +199,7 @@ Default to TikZ. Use draw.io only when: user requests it, needs heavy gradients/
 | Geometry/math | Coordinate + geometric | `references/geometry-math.md` |
 | Embedded visualizations | TikZ-native plots | `references/visual-patterns.md` |
 | PGFPlots bar/line/scatter | CSV → `\addplot table` | `references/pgfplots-templates.md` |
-| Graphdrawing auto-layout | LuaLaTeX algorithm | `references/graphdrawing-guide.md` |
+| Graphdrawing auto-layout | LuaLaTeX layered/spring/circular/tree | `references/graphdrawing-guide.md` |
 
 ## Reference Loading Index
 
@@ -228,7 +220,6 @@ Data-specific (optional):
 Quality tools (all based on shared `references/tikz_parser.py`):
 - `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)
 - `references/pdf-overlap-checker.py` — post-compile PDF overlap (auto-run step 6)
-- `references/tikz-path-router.py` — A* auto-routing, triggered if line-crossing detected (step 4)
 - `references/figure-diff.py` — SSIM comparison, triggered if reference image provided (step 6)
 
 ## Quality Gates
@@ -292,7 +283,7 @@ tikz-figure-skill/
   references/
     tikz_parser.py                  -- Shared .tex parser (used by all tools)
     tikz-validator.py               -- Pre-compile 10-check validator (auto-run)
-    tikz-path-router.py             -- A* auto-routing, accepts --from-tex
+    layout-engine.py                -- JSON spec → \graph .tex generator
     pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
     figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
     design-philosophy.md            -- Core design principles + quality gates

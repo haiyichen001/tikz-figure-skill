@@ -382,7 +382,7 @@ def check_line_crossings(lines: list[str]) -> list[Issue]:
 
     if crossings > 0:
         issues.append(Issue(level="WARN", category="line-crossing", line_no=0,
-            message=f"Line crossings: {crossings} detected. Consider running tikz-path-router.py --from-tex --auto-fix"))
+            message=f"Line crossings: {crossings} detected — graphdrawing edge routing should handle these"))
     return issues
 
 
