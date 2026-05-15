@@ -166,9 +166,10 @@ def generate_tex(all_nodes, meta, spec):
     styles = spec.get("styles",{})
     edges = spec.get("edges",[])
     edge_types = spec.get("edge_types",{
-        "main":"thick,acaOrangeLine,rounded corners=6pt",
-        "flow":"thick,black!55,rounded corners=4pt",
-        "feedback":"dashed,acaRedLine!60,rounded corners=6pt"})
+        "main":"line width=1.5pt,acaOrangeLine,rounded corners=6pt",
+        "flow":"line width=1.0pt,black!55,rounded corners=4pt",
+        "side":"line width=0.8pt,dashed,acaBlueLine!60,rounded corners=6pt",
+        "feedback":"line width=0.8pt,dashed,acaRedLine!60,rounded corners=6pt"})
     title = spec.get("title")
     groups = spec.get("groups",[])
     node_map = {n["id"]:n for n in all_nodes}
@@ -190,12 +191,13 @@ def generate_tex(all_nodes, meta, spec):
     lines.append(r"  >={Stealth},line cap=round,")
     lines.append(r"]")
 
-    # Title
+    # Title — auto-centered over content
     cx = (meta["left_rail"]+rail)/2 if all_nodes else 10
+    top_y = max(n["y"]+n["height"]/2 for n in all_nodes) + 1.2 if all_nodes else 2
     if title:
-        lines.append(f"\\node[font=\\Large\\bfseries\\sffamily,align=center] at ({cx:.1f},1.5) {{{title['text']}}};")
+        lines.append(f"\\node[font=\\Large\\bfseries\\sffamily,align=center] at ({cx:.1f},{top_y:.1f}) {{{title['text']}}};")
         if title.get("subtitle"):
-            lines.append(f"\\node[font=\\footnotesize\\sffamily,color=acaGreyLine] at ({cx:.1f},0.7) {{{title['subtitle']}}};")
+            lines.append(f"\\node[font=\\small\\sffamily,color=acaGreyLine] at ({cx:.1f},{top_y-0.7:.1f}) {{{title['subtitle']}}};")
 
     # Style defs
     lines.append(make_style_defs(styles))
@@ -233,6 +235,9 @@ def generate_tex(all_nodes, meta, spec):
             if label:
                 lines.append(f"  node[midway,right,font=\\tiny\\sffamily] {{{label}}};")
             else:
+                if label:
+                lines.append(f"  node[midway,right,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}};")
+            else:
                 lines.append(";")
         elif sy > dy:
             # Source below target (feedback/backward): route via right rail
@@ -240,21 +245,18 @@ def generate_tex(all_nodes, meta, spec):
             lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({rail:.1f},{sy:.1f})")
             lines.append(f"  -- ({rail:.1f},{mid_y:.1f}) -- ({rail:.1f},{dy:.1f}) -| ({tid}.east)")
             if label:
-                lines.append(f"  node[pos=0.5,right,font=\\tiny\\sffamily] {{{label}}};")
+                lines.append(f"  node[pos=0.4,right,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}};")
             else:
                 lines.append(";")
         else:
-            # Source above target (forward flow): orthogonal L-shape
+            # Source above target (forward flow): orthogonal L-shape with rounded corners
             mid_y = (sy + dy) / 2
             if abs(sx - dx) > 5:
-                # Far apart: go right → rail → rail → target
                 lines.append(f"\\draw[{estyle}] ({fid}.east) -| ({rail:.1f},{mid_y:.1f}) |- ({tid}.west)")
             else:
-                # Close together: simple horizontal-then-vertical
-                mx = (sx + sw/2 + dx - dw/2) / 2
                 lines.append(f"\\draw[{estyle}] ({fid}.east) -- ++(0.3,0) |- ({dx:.1f},{mid_y:.1f}) -| ({tid}.west)")
             if label:
-                lines.append(f"  node[pos=0.5,above,font=\\tiny\\sffamily] {{{label}}};")
+                lines.append(f"  node[pos=0.6,above,font=\\tiny\\sffamily,color=acaGreyLine] {{{label}}};")
             else:
                 lines.append(";")
 
@@ -262,21 +264,21 @@ def generate_tex(all_nodes, meta, spec):
     if groups:
         lines.append("\n% === Zones ===")
         lines.append(r"\begin{pgfonlayer}{bg}")
-        zone_colors = ["acaBlueFill!15","acaGreenFill!15","acaPurpleFill!15",
-                       "acaOrangeFill!15","acaRedFill!15"]
+        zone_colors = ["acaBlueFill!12","acaGreenFill!12","acaPurpleFill!12",
+                       "acaOrangeFill!12","acaRedFill!12","acaGreyFill!20"]
         for gi, grp in enumerate(groups):
             col = meta["col_extents"].get(gi,{})
             if not col: continue
             zc = zone_colors[gi % len(zone_colors)]
-            x0 = col["x"] - col["max_w"]/2 - 0.5
-            x1 = col["x"] + col["max_w"]/2 + 0.5
-            y0 = col["y_bot"] - 0.4
-            y1 = col["y_top"] + 0.4
-            lines.append(f"  \\fill[{zc},rounded corners=6pt] ({x0:.1f},{y0:.1f}) rectangle ({x1:.1f},{y1:.1f});")
-            # Zone label
+            x0 = col["x"] - col["max_w"]/2 - 0.4
+            x1 = col["x"] + col["max_w"]/2 + 0.4
+            y0 = col["y_bot"] - 0.3
+            y1 = col["y_top"] + 0.3
+            lines.append(f"  \\fill[{zc},rounded corners=4pt] ({x0:.1f},{y0:.1f}) rectangle ({x1:.1f},{y1:.1f});")
+            # Zone label — small, grey, top-left
             label = grp.get("label","")
             if label:
-                lines.append(f"  \\node[font=\\tiny\\sffamily\\bfseries,acaGreyLine] at ({x0+0.5:.1f},{y1-0.15:.1f}) {{{label}}};")
+                lines.append(f"  \\node[font=\\tiny\\sffamily,color=acaGreyLine!70,anchor=north west] at ({x0+0.2:.1f},{y1+0.05:.1f}) {{{label}}};")
         lines.append(r"\end{pgfonlayer}")
 
     lines.append(r"\end{tikzpicture}")
