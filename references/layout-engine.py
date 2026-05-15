@@ -166,9 +166,9 @@ def generate_tex(all_nodes, meta, spec):
     styles = spec.get("styles",{})
     edges = spec.get("edges",[])
     edge_types = spec.get("edge_types",{
-        "main":"thick,acaOrangeLine,rounded corners=6pt,shorten >=3pt,shorten <=3pt",
-        "flow":"thick,black!55,rounded corners=4pt,shorten >=3pt,shorten <=3pt",
-        "feedback":"dashed,acaRedLine!60,rounded corners=6pt,shorten >=3pt,shorten <=3pt"})
+        "main":"thick,acaOrangeLine,rounded corners=6pt,shorten >=5pt,shorten <=5pt",
+        "flow":"thick,black!55,rounded corners=4pt,shorten >=5pt,shorten <=5pt",
+        "feedback":"dashed,acaRedLine!60,rounded corners=6pt,shorten >=5pt,shorten <=5pt"})
     title = spec.get("title")
     groups = spec.get("groups",[])
     node_map = {n["id"]:n for n in all_nodes}
