@@ -1,6 +1,6 @@
-# tikz-figure-skill v1.2
+# tikz-figure-skill v1.3
 
-A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with built-in collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Zero-collision academic figures by default.
+A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with built-in collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Features a fully integrated tool pipeline with shared parser, auto-fix routing, and cross-platform environment checks.
 
 ## Features
 
@@ -8,12 +8,11 @@ A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams with bu
 - **PGFPlots data charts** -- 6 templates for bar/line/scatter/heatmap/box plots from CSV
 - **Graphdrawing auto-layout** -- LuaLaTeX for >15 node graphs: layered/force/circular/tree + edge routing
 - **Collision detection (10 checks)** -- Bezier curve math, label gap formulas, edge clipping, boundary clearance
-- **Post-compile PDF validation** -- text overlap, line-crossings, off-center detection
-- **Auto-retry & recovery** -- compile errors auto-diagnosed and fixed, max 3 rounds before escalation
-- **3 output modes** -- `--draft` (fast preview), `--final` (full QA), `--data` (CSV chart mode)
-- **Cross-platform** -- macOS/Linux/Windows, auto-detects LaTeX distro, CJK fonts
+- **Auto-fix pipeline** -- line-crossing triggers `tikz-path-router --auto-fix`, compile failures auto-retry
+- **Shared parser** -- `tikz_parser.py` used by all validation/routing tools, no duplicated code
+- **Cross-platform** -- macOS/Linux/Windows, `check-env.py` auto-runs on startup
 - **context: fork isolation** -- runs in subagent, doesn't pollute main session
-- **Academic design system** -- 11-color palette, 9 visual patterns, 44-item review checklist
+- **Academic design system** -- 11-color palette, 9 visual patterns
 
 ## Install
 
@@ -72,26 +71,27 @@ Agent Harness, and Solver Backend. Include feedback loops.
 | 5 | Heatmap matrix | Inline data table |
 | 6 | Box plot | Pre-computed quartiles |
 
-## Structure (12 references, 101 KB)
+## Structure (13 references, ~110 KB)
 
 ```
 tikz-figure-skill/
-  SKILL.md                          -- Main skill definition (290 lines)
+  SKILL.md                          -- Main skill definition (~275 lines)
   scripts/
-    check-env.py                    -- Cross-platform dependency checker
+    check-env.py                    -- Cross-platform dependency checker (auto-run)
   references/
-    design-philosophy.md            -- Core design principles + quality gates (4.6 KB)
-    tikz-coding-rules.md            -- Mandatory TikZ conventions (3.1 KB)
-    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column (5.7 KB)
-    visual-patterns.md              -- 9 patterns + embedded viz + font rules (3.3 KB)
-    collision-detection.md          -- Bezier formulas, clearance tables (3.6 KB)
-    pgfplots-templates.md           -- 6 CSV-driven chart templates (9.1 KB)
-    graphdrawing-guide.md           -- LuaLaTeX auto-layout guide (6.2 KB)
-    geometry-math.md                -- Coordinate systems, formulas (4.7 KB)
-    tikz-validator.py               -- Pre-compile 10-check validator (28.6 KB)
-    pdf-overlap-checker.py          -- Post-compile PDF overlap detector (17.8 KB)
-    tikz-path-router.py             -- A* path planning (10.7 KB)
-    figure-diff.py                  -- SSIM comparison tool (6.7 KB)
+    tikz_parser.py                  -- Shared .tex parser (used by all tools)
+    tikz-validator.py               -- Pre-compile 10-check validator (auto-run)
+    tikz-path-router.py             -- A* auto-routing, accepts --from-tex
+    pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
+    figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
+    design-philosophy.md            -- Core design principles + quality gates
+    tikz-coding-rules.md            -- Mandatory TikZ conventions
+    layout-patterns.md              -- Architecture, pipeline, sequence, 3-column
+    visual-patterns.md              -- 9 reusable drawing patterns + font rules
+    collision-detection.md          -- Bezier formulas, clearance tables
+    pgfplots-templates.md           -- 6 CSV-driven chart templates
+    graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
+    geometry-math.md                -- Coordinate systems, formulas
 ```
 
 ## Requirements
@@ -102,8 +102,9 @@ tikz-figure-skill/
 
 ## Changelog
 
-- **v1.2.1** — Flattened references: 20 → 13 files (113 KB, -35% files, -62% size). Merged 3 layout files → `layout-patterns.md`. Merged data-viz → `visual-patterns.md`. Slimmed `tikz-global-rules.md` (36.8 KB → `tikz-coding-rules.md` 3.1 KB). Deleted `drawio-modes.md` (35.6 KB), `review-checklist.md` (38.5 KB), `experience-log.md` (26.3 KB), `evolution.md` (6.3 KB), `data-visualization.md`, `layered-architecture.md`, `data-pipeline.md`, `three-column-mapping.md`.
-- **v1.2** — Full YAML frontmatter, SKILL.md 299 lines, `context: fork`, `check-env.py`, 3 modes, auto-retry, `design-philosophy.md`
+- **v1.3** — Shared parser `tikz_parser.py` eliminates duplicate code across tools. `tikz-path-router` now accepts `--from-tex` and `--auto-fix`. `tikz-validator` rewritten with clean imports. `geometry-math.md` slimmed to English. SKILL.md: full auto-pipeline (check-env → validate → auto-fix-route → compile → overlap-check → figure-diff).
+- **v1.2.1** — Flattened references: 20 → 13 files (-35% files, -62% size)
+- **v1.2** — Full YAML frontmatter, `context: fork`, `check-env.py`, 3 modes, auto-retry
 - **v1.1** — PGFPlots templates, graphdrawing guide, collision detection
 - **v1.0** — Initial release
 
