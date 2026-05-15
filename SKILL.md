@@ -239,6 +239,13 @@ Data-specific (optional):
 - `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
 - `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
 
+Built-in templates (use directly — bypass layout engine):
+- `references/templates/transformer.tex` — classic "Attention Is All You Need" Transformer architecture (NNTikZ)
+- `references/templates/multihead_attention.tex` — Multi-Head Attention mechanism detail
+
+**When to use a built-in template vs the layout engine:**
+Transformer, attention, RNN, LSTM, GRU, and other canonical deep learning architectures have well-established visual conventions (vertical stacks, curved residual arrows, Nx wrapping boxes). Use the built-in templates directly for these. Use the layout engine for custom pipeline/flowchart/architecture diagrams that don't have a standard visual form.
+
 Quality tools (all based on shared `references/tikz_parser.py`):
 - `references/tikz-validator.py` — pre-compile 10 checks (auto-run step 4)
 - `references/pdf-overlap-checker.py` — post-compile PDF overlap (auto-run step 6)
