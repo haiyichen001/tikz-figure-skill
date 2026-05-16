@@ -113,8 +113,9 @@ def check_direction_reversal(lines: list[str]) -> list[Issue]:
 
 # ─── Check 3: Container overflow ───
 
-def check_container_overflow(nodes: list[Node], zones: list[Zone]) -> list[Issue]:
+def check_container_overflow(nodes: list[Node], zones: list[Zone], diag: float = 30.0) -> list[Issue]:
     issues = []
+    PAD = max(diag * 0.01, 0.2)  # 1% of diagonal, min 0.2cm
     for node in nodes:
         if not node.name:
             continue
@@ -125,7 +126,6 @@ def check_container_overflow(nodes: list[Node], zones: list[Zone]) -> list[Issue
                     containing = zone
         if containing is None:
             continue
-        PAD = 0.3
         hw, hh = node.width / 2, node.height / 2
         if node.x - hw < containing.x_min + PAD:
             issues.append(Issue(level="WARN", category="overflow", line_no=0,
@@ -144,9 +144,9 @@ def check_container_overflow(nodes: list[Node], zones: list[Zone]) -> list[Issue
 
 # ─── Check 4: Label collision ───
 
-def check_label_collision(nodes: list[Node]) -> list[Issue]:
+def check_label_collision(nodes: list[Node], diag: float = 30.0) -> list[Issue]:
     issues = []
-    MIN_GAP = 0.15
+    MIN_GAP = max(diag * 0.005, 0.1)  # 0.5% of diagonal, min 0.1cm
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             n1, n2 = nodes[i], nodes[j]
@@ -287,9 +287,9 @@ def check_label_gaps(lines: list[str], nodes: list[Node]) -> list[Issue]:
 
 # ─── Check 8: Edge clipping ───
 
-def check_edge_clipping(nodes: list[Node], zones: list[Zone]) -> list[Issue]:
+def check_edge_clipping(nodes: list[Node], zones: list[Zone], diag: float = 30.0) -> list[Issue]:
     issues = []
-    M = MIN_CLEARANCES["any_to_canvas_edge"]
+    M = max(diag * 0.02, 0.3)  # 2% of diagonal, min 0.3cm
     if zones:
         all_x = [z.x_min for z in zones] + [z.x_max for z in zones]
         all_y = [z.y_min for z in zones] + [z.y_max for z in zones]
@@ -321,9 +321,9 @@ def check_edge_clipping(nodes: list[Node], zones: list[Zone]) -> list[Issue]:
 
 # ─── Check 9: Boundary clearance ───
 
-def check_boundary_clearance(nodes: list[Node]) -> list[Issue]:
+def check_boundary_clearance(nodes: list[Node], diag: float = 30.0) -> list[Issue]:
     issues = []
-    C = MIN_CLEARANCES["label_to_shape"]
+    C = max(diag * 0.01, 0.15)  # 1% of diagonal, min 0.15cm
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             n1, n2 = nodes[i], nodes[j]
@@ -405,12 +405,12 @@ def check_oversize_nodes(nodes: list[Node]) -> list[Issue]:
         est_width = text_chars * 0.12 + 0.8   # chars * font + inner_sep
         est_height = 0.65                      # single line + padding
 
-        if node.width > 1.5 and node.width > est_width * 1.8:
+        if node.width > 1.5 and node.width > est_width * 3.0:  # 3x text width
             issues.append(Issue(level="WARN", category="oversize", line_no=0,
                 message=f"Box too wide: '{node.name}' {node.width:.1f}cm for '{node.name}'"
                 f" (est text ~{est_width:.1f}cm, ratio {node.width/est_width:.1f}x)"
                 f" — drop minimum width or reduce to ~{est_width:.1f}cm"))
-        if node.height > 1.0 and node.height > est_height * 2.5:
+        if node.height > 1.0 and node.height > est_height * 3.0:  # 3x text height
             issues.append(Issue(level="WARN", category="oversize", line_no=0,
                 message=f"Box too tall: '{node.name}' {node.height:.1f}cm"
                 f" (est text ~{est_height:.1f}cm, ratio {node.height/est_height:.1f}x)"
@@ -420,8 +420,17 @@ def check_oversize_nodes(nodes: list[Node]) -> list[Issue]:
 
 # ─── Main ───
 
+def compute_diag(nodes):
+    """Calculate figure diagonal from node positions."""
+    if not nodes: return 30.0  # default ~30cm diagonal
+    xs = [n.x for n in nodes]
+    ys = [n.y for n in nodes]
+    w = max(xs) - min(xs) + 3 if xs else 20
+    h = max(ys) - min(ys) + 3 if ys else 15
+    return (w**2 + h**2) ** 0.5  # cm
+
 def validate(filepath: str) -> list[Issue]:
-    """Interference checks only — 5 checks that actually break diagrams."""
+    """Interference checks only — thresholds relative to figure diagonal."""
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
     lines = content.split("\n")
@@ -429,17 +438,18 @@ def validate(filepath: str) -> list[Issue]:
     all_issues = []
     nodes = parse_nodes(lines)
     zones = parse_zones(lines)
-    # 1. Boxes touching/overlapping
+    diag = compute_diag(nodes)  # cm
+    # 1. Boxes touching/overlapping (relaxed: diag*0.5%)
     if len(nodes) >= 2:
-        all_issues.extend(check_label_collision(nodes))
-    # 2. Node outside its zone background
+        all_issues.extend(check_label_collision(nodes, diag))
+    # 2. Node outside its zone background (padding: diag*1%)
     if zones:
-        all_issues.extend(check_container_overflow(nodes, zones))
-    # 3. Node too close to canvas edge
-    all_issues.extend(check_edge_clipping(nodes, zones))
-    # 4. Nodes too close (<0.3cm)
-    all_issues.extend(check_boundary_clearance(nodes))
-    # 5. Box size >> text size
+        all_issues.extend(check_container_overflow(nodes, zones, diag))
+    # 3. Node too close to canvas edge (margin: diag*2%)
+    all_issues.extend(check_edge_clipping(nodes, zones, diag))
+    # 4. Nodes too close (gap: diag*1%)
+    all_issues.extend(check_boundary_clearance(nodes, diag))
+    # 5. Box size >> text size (3x, already relative)
     all_issues.extend(check_oversize_nodes(nodes))
     return all_issues
 
