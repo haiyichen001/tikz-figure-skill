@@ -80,6 +80,20 @@ STEP 4 — Model Judges Each WARN (template-first mindset):
 Deliver: .tex + .pdf + .png + inspection summary
 ```
 
+## What This Skill Can and Cannot Do
+
+| Category | Can do | Cannot do |
+|----------|--------|-----------|
+| **ML/DL architectures** | Generate directly from 187 templates (Transformer, LSTM, GNN, GAN, VAE, etc.) | Invent new architectures — needs a template to adapt |
+| **Custom system architectures** | Build from template skeleton by adapting labels, adding/removing layers | Generate pixel-perfect from scratch without human review |
+| **UML diagrams** | Class, sequence, state-machine from pgf-umlsd templates | Complex UML with all edge cases |
+| **Flowcharts / pipelines** | Template-adapt or engine-generate with inspection | Guarantee zero warnings on first compile |
+| **Data charts (CSV)** | PGFPlots bar, line, scatter, heatmap from data | Interactive or 3D charts |
+| **Scientific concept figures** | 111 physics/chemistry figures from janosh/diagrams | Biology pathway diagrams, chemical structures |
+| **Quality inspection** | 15 automated checks (collision, overflow, balance, readability) | Judge visual aesthetics — needs human review |
+| **Color customization** | Academic palette with all parameters configurable | Match arbitrary brand colors automatically |
+| **Hand-drawn / sketch style** | Not supported | Excalidraw, draw.io, Figma style |
+
 ## When to Use
 
 - User asks to create a diagram, figure, chart, or illustration
