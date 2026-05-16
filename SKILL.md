@@ -1,6 +1,6 @@
 ---
 name: tikz-figure-skill
-version: 2.0.0
+version: 3.0.0
 author: haiyichen
 description: |
   Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
@@ -46,36 +46,57 @@ context: fork
 
 # tikz-figure-skill
 
-Generate publication-quality LaTeX/TikZ diagrams with automated collision detection, PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Works cross-platform (macOS/Linux/Windows).
+Generate publication-quality LaTeX/TikZ diagrams. Template-first with intelligent stitching, engine fallback, always validated. Works cross-platform.
+
+## Core Workflow (MANDATORY — follow this order)
+
+```
+User describes diagram
+        ↓
+STEP 1 — Template Match: scan 402 templates in references/templates/
+        by keyword (Transformer, LSTM, UML, architecture, pipeline, etc.)
+        ↓
+  ├─ FULL MATCH → use directly. Customize colors, labels, line widths.
+  ├─ PARTIAL MATCH → stitch 2+ templates. Merge sub-graphs:
+  │     e.g. Transformer template's Encoder column + Mamba template's Decoder column
+  │     e.g. GANTT template's time axis + Architecture template's block styles
+  └─ NO MATCH → layout-engine.py with JSON spec (last resort)
+        ↓
+STEP 2 — Compile: pdflatex (preferred, wider package compat) or lualatex
+        ↓
+STEP 3 — Validate (MANDATORY for ALL diagrams, template or engine):
+        python references/tikz-validator.py output.tex
+        ↓
+STEP 4 — PDF Overlap Check (MANDATORY):
+        python references/pdf-overlap-checker.py output.pdf
+        ↓
+STEP 5 — AI-Driven Fix Loop (YOU read warnings, YOU decide how to fix):
+        Read validator output. For each warning, apply an intelligent fix:
+        - short-arrow / collision → increase row_gap/column_gap in JSON,
+          or adjust node spacing in .tex
+        - overflow → expand zone padding
+        - bezier-collision → move label, reduce bend angle
+        - oversize → reduce minimum_width/height in style
+        - edge-clip → increase canvas.border
+        Re-compile, re-validate. Max 3 rounds.
+        ↓
+Deliver: .tex + .pdf + .png + validation summary
+```
 
 ## When to Use
 
 - User explicitly asks to create a diagram, figure, chart, or illustration
 - The output is for a paper, thesis, report, slide deck, or publication
 - User provides a paper excerpt, data file (CSV), or architectural description
-- User wants TikZ code, pgfplots chart, or LuaLaTeX graphdrawing
 
 ## When NOT to Use
 
-- **Quick sketch / whiteboard doodle** — this skill does full validation pipeline, overkill for napkin sketches
+- **Quick sketch / whiteboard doodle** — full validation pipeline is overkill
 - **"Show me an example of X"** — user is browsing, not requesting a figure
-- **General TikZ syntax questions** — use WebSearch, don't load the entire skill
-- **Raster/bitmap tools** — user explicitly wants Photoshop, Figma, Canva, or similar
-- **Non-academic graphics** — memes, social media banners, casual illustrations
+- **General TikZ syntax questions** — use WebSearch
+- **Raster/bitmap tools** — user wants Photoshop, Figma, Canva
+- **Non-academic graphics** — memes, social media banners
 - **Data analysis without visualization** — user wants statistics, not charts
-- **Already-rendered figure review** — user has a PNG and wants feedback on it (not generating)
-
-## Quickstart
-
-Say `/tikz-figure-skill Draw a 3-layer system architecture` and the skill will:
-
-1. **Env check** — auto-run `scripts/check-env.py`, detect LaTeX/Python/fonts
-2. **Analyze** — output drawing plan with module list + layout strategy
-3. **Generate** — produce TikZ `\graph` syntax. lualatex + graphdrawing computes all node positions and edge routes at compile time via Sugiyama layered layout. No manual coordinates. No overlap. No edge-crossing-boxes.
-4. **Validate** — `tikz-validator.py` (10 checks)
-5. **Compile** — lualatex (default, for graphdrawing support) or pdflatex fallback, auto-retry on failure (max 3)
-6. **Post-check** — `pdf-overlap-checker.py`, if reference image exists → auto-call `figure-diff.py`
-7. **Deliver** — .tex + .pdf + .png + validation report
 
 ## Output Modes
 
