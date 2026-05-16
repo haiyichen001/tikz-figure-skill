@@ -53,14 +53,22 @@ Generate publication-quality LaTeX/TikZ diagrams. Template-first with intelligen
 ```
 User describes diagram
         ↓
-STEP 1 — Template Match: scan 402 templates in references/templates/
-        by keyword (Transformer, LSTM, UML, architecture, pipeline, etc.)
+STEP 1 — Template Match (MANDATORY — execute BEFORE anything else):
+        ```
+        grep -l -i "<keyword1>\|<keyword2>" references/templates/*.tex
+        ```
+        Scan ALL 402 templates by keyword from the user's description.
+        If zero matches, broaden keywords and try again.
+        YOU MUST output a list of matched templates BEFORE proceeding.
         ↓
-  ├─ FULL MATCH → use directly. Customize colors, labels, line widths.
-  ├─ PARTIAL MATCH → stitch 2+ templates. Merge sub-graphs:
-  │     e.g. Transformer template's Encoder column + Mamba template's Decoder column
-  │     e.g. GANTT template's time axis + Architecture template's block styles
-  └─ NO MATCH → layout-engine.py with JSON spec (last resort)
+  ├─ FULL MATCH (1+ templates cover entire diagram) → use directly.
+  │     Customize colors, labels, line widths. Compile. Done.
+  ├─ PARTIAL MATCH → stitch 2+ templates. Examples:
+  │     Transformer Encoder column + Mamba Decoder column → hybrid
+  │     GANTT time axis + Architecture block styles → timeline architecture
+  │     CI pipeline template + cloud-arch template → CI/CD architecture
+  └─ NO MATCH after keyword scan → layout-engine.py (LAST RESORT).
+        YOU MUST state "No template matched after scanning" before using engine.
         ↓
 STEP 2 — Compile: pdflatex (preferred) or lualatex.
         ⚠ SERIAL ONLY. Before compiling, verify the .tex file exists
