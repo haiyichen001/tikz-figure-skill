@@ -92,6 +92,7 @@ Deliver: .tex + .pdf + .png + inspection summary
 |------|------|--------|
 | `tikz-validator.py` | Pre-compile | Micro-slopes, direction, overflow, collision, arrow length, Bezier, label gaps, edge clip, boundary clearance, line crossings, oversize |
 | `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, off-center, line crossing, text-line intersection |
+| `quality-report.py` | Post-compile | Aspect ratio, content density, orphan nodes, layout balance, font scaling |
 
 ## Template Library (187 verified, 4 sources)
 
@@ -103,6 +104,14 @@ Deliver: .tex + .pdf + .png + inspection summary
 | NNTikZ + custom | 70 | 11 | Transformer, LSTM, GRU, RNN, CAX-Agent |
 
 ## Reference Loading Index
+
+Core tools (shared by sensor suite):
+- `references/tikz_parser.py` — shared .tex parser
+- `references/tikz-validator.py` — pre-compile 11 checks (sensor)
+- `references/pdf-overlap-checker.py` — post-compile PDF check (sensor)
+- `references/quality-report.py` — aspect/density/balance/orphans (sensor)
+- `references/layout-engine.py` — coordinate calculator (rare, engine fallback)
+- `references/figure-diff.py` — SSIM comparison (if reference image exists)
 
 Core (always load):
 - `references/tikz-coding-rules.md` — coding conventions
