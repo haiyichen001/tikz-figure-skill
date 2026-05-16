@@ -115,7 +115,7 @@ def check_direction_reversal(lines: list[str]) -> list[Issue]:
 
 def check_container_overflow(nodes: list[Node], zones: list[Zone], diag: float = 30.0) -> list[Issue]:
     issues = []
-    PAD = max(diag * 0.01, 0.2)  # 1% of diagonal, min 0.2cm
+    PAD = diag * 0.01  # 1% of diagonal
     for node in nodes:
         if not node.name:
             continue
@@ -146,7 +146,7 @@ def check_container_overflow(nodes: list[Node], zones: list[Zone], diag: float =
 
 def check_label_collision(nodes: list[Node], diag: float = 30.0) -> list[Issue]:
     issues = []
-    MIN_GAP = max(diag * 0.005, 0.1)  # 0.5% of diagonal, min 0.1cm
+    MIN_GAP = diag * 0.005  # 0.5% of diagonal
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             n1, n2 = nodes[i], nodes[j]
@@ -289,7 +289,7 @@ def check_label_gaps(lines: list[str], nodes: list[Node]) -> list[Issue]:
 
 def check_edge_clipping(nodes: list[Node], zones: list[Zone], diag: float = 30.0) -> list[Issue]:
     issues = []
-    M = max(diag * 0.02, 0.3)  # 2% of diagonal, min 0.3cm
+    M = diag * 0.02  # 2% of diagonal
     if zones:
         all_x = [z.x_min for z in zones] + [z.x_max for z in zones]
         all_y = [z.y_min for z in zones] + [z.y_max for z in zones]
@@ -323,7 +323,7 @@ def check_edge_clipping(nodes: list[Node], zones: list[Zone], diag: float = 30.0
 
 def check_boundary_clearance(nodes: list[Node], diag: float = 30.0) -> list[Issue]:
     issues = []
-    C = max(diag * 0.01, 0.15)  # 1% of diagonal, min 0.15cm
+    C = diag * 0.01  # 1% of diagonal
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             n1, n2 = nodes[i], nodes[j]

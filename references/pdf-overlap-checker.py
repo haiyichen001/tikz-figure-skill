@@ -119,11 +119,11 @@ def find_container(word: BBox, rects: list[BBox]) -> BBox | None:
     return best
 
 
-def check_word_overlaps(words: list[BBox]) -> list[Issue]:
+def check_word_overlaps(words: list[BBox], diag_pt: float = 854.0) -> list[Issue]:
     """Check nearby word pairs for overlapping bounding boxes."""
     issues = []
-    MIN_GAP = 1.5  # minimum gap in points
-    PROXIMITY = 50.0  # compare words within 50pt (increased from 30)
+    MIN_GAP = diag_pt * 0.001  # 0.1% of diagonal
+    PROXIMITY = diag_pt * 0.05  # 5% of diagonal
 
     checked = set()
     for i in range(len(words)):
@@ -179,10 +179,10 @@ def check_word_overlaps(words: list[BBox]) -> list[Issue]:
     return issues
 
 
-def check_text_overflow(words: list[BBox], rects: list[BBox]) -> list[Issue]:
+def check_text_overflow(words: list[BBox], rects: list[BBox], diag_pt: float = 854.0) -> list[Issue]:
     """Check if any text overflows its container rectangle."""
     issues = []
-    TOLERANCE = 2.0  # tolerance in points
+    TOLERANCE = diag_pt * 0.0015  # 0.15% of diagonal
 
     for word in words:
         container = find_container(word, rects)
@@ -217,10 +217,10 @@ def check_text_overflow(words: list[BBox], rects: list[BBox]) -> list[Issue]:
     return issues
 
 
-def check_content_balance(words: list[BBox], rects: list[BBox]) -> list[Issue]:
+def check_content_balance(words: list[BBox], rects: list[BBox], diag_pt: float = 854.0) -> list[Issue]:
     """Check if content inside large containers is reasonably centered."""
     issues = []
-    MIN_CONTAINER = 80.0  # only check containers > 80pt (about 2.8cm)
+    MIN_CONTAINER = diag_pt * 0.08  # 8% of diagonal
 
     for rect in rects:
         if rect.width < MIN_CONTAINER or rect.height < MIN_CONTAINER:
@@ -270,10 +270,10 @@ def check_content_balance(words: list[BBox], rects: list[BBox]) -> list[Issue]:
     return issues
 
 
-def check_text_line_overlap(words: list[BBox], lines: list[BBox]) -> list[Issue]:
+def check_text_line_overlap(words: list[BBox], lines: list[BBox], diag_pt: float = 854.0) -> list[Issue]:
     """Check if text overlaps with lines (arrows, zone borders, connections)."""
     issues = []
-    BUFFER = 2.0  # minimum distance from text to line in points
+    BUFFER = diag_pt * 0.0015  # 0.15% of diagonal
 
     for word in words:
         if word.width < 8:  # skip tiny text
@@ -333,11 +333,11 @@ def segments_intersect(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) -> bool:
     return False
 
 
-def check_line_crossings(lines: list[BBox]) -> list[Issue]:
+def check_line_crossings(lines: list[BBox], diag_pt: float = 854.0) -> list[Issue]:
     """Detect lines crossing each other — messy connection areas."""
     issues = []
     crossings = 0
-    MIN_LENGTH = 15.0  # ignore tiny lines (box borders, ticks)
+    MIN_LENGTH = diag_pt * 0.015  # 1.5% of diagonal
 
     # Filter to meaningful lines
     real_lines = []
@@ -370,15 +370,16 @@ def validate_pdf(filepath: str) -> list[Issue]:
     try:
         import pdfplumber
     except ImportError:
-        print("ERROR: pdfplumber 未安装。运行: pip install pdfplumber")
+        print("ERROR: pdfplumber not installed. Run: pip install pdfplumber")
         sys.exit(1)
 
     pdf = pdfplumber.open(filepath)
     if not pdf.pages:
-        print("ERROR: PDF 没有页面")
+        print("ERROR: PDF has no pages")
         sys.exit(1)
 
     page = pdf.pages[0]
+    pdiag = (page.width**2 + page.height**2) ** 0.5  # page diagonal in pt
 
     # Extract words with bounding boxes
     raw_words = page.extract_words(
@@ -443,23 +444,23 @@ def validate_pdf(filepath: str) -> list[Issue]:
     all_issues: list[Issue] = []
 
     # 1. Text-text overlap
-    all_issues.extend(check_word_overlaps(words))
+    all_issues.extend(check_word_overlaps(words, pdiag))
 
     # 2. Text overflow from container
     if rects:
-        all_issues.extend(check_text_overflow(words, rects))
+        all_issues.extend(check_text_overflow(words, rects, pdiag))
 
     # 3. Content centering and balance inside containers
     if rects:
-        all_issues.extend(check_content_balance(words, rects))
+        all_issues.extend(check_content_balance(words, rects, pdiag))
 
     # 4. Text-line overlap (text crossed by arrows or zone borders)
     if pdf_lines:
-        all_issues.extend(check_text_line_overlap(words, pdf_lines))
+        all_issues.extend(check_text_line_overlap(words, pdf_lines, pdiag))
 
     # 5. Line-line crossings (messy connection areas)
     if pdf_lines:
-        all_issues.extend(check_line_crossings(pdf_lines))
+        all_issues.extend(check_line_crossings(pdf_lines, pdiag))
 
     pdf.close()
     return all_issues
