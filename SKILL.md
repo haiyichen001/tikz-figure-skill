@@ -48,18 +48,28 @@ STEP 1 — Template Match (ALWAYS first, never skip):
         ↓
 STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
-STEP 3 — Quality Inspection (MANDATORY, AI-driven):
-        python references/tikz-validator.py output.tex    (11 pre-compile checks)
-        python references/pdf-overlap-checker.py output.pdf (post-compile)
+STEP 3 — Quality Sensors (MANDATORY, feed the model — never auto-fix):
+        python references/tikz-validator.py output.tex        (11 pre-compile checks)
+        python references/pdf-overlap-checker.py output.pdf    (post-compile PDF)
+        python references/quality-report.py output.tex output.pdf  (aspect ratio, density, balance, orphans)
         ↓
-STEP 4 — AI-Driven Fix (YOU read the report, YOU decide):
-        The engine only reports problems. You understand and fix.
-        Template-adaptation issues to watch for:
-        - Text got longer → overflow, collision, oversize
-        - Layers added/removed → spacing collapse, arrow gaps
-        - Nodes added → line crossing, container overflow  
-        - Title adjusted → off-center, edge clip
-        Fix by editing .tex directly. Re-compile, re-inspect. Max 3 rounds.
+        ALL THREE are sensors only. They output ERROR / WARN / INFO.
+        They NEVER modify anything. They report to YOU (the model).
+        ↓
+STEP 4 — Model Decides (YOU read all 3 reports, YOU choose):
+        - ERROR: must fix. Overlap, unreadable text, nodes off-canvas.
+        - WARN: you judge. Wide aspect ratio? Normal for pipeline diagrams.
+          Sparse? Normal for simple architectures. Use context.
+        - INFO: FYI only. No action needed.
+        │
+        Quality checks the model applies (not hardcoded):
+        │  Layout: aspect ratio, balance, orphans, content density
+        │  Spacing: collision, overflow, edge clip, tight clearance
+        │  Semantics: do inputs/outputs connect? Are labels clear?
+        │  Usability: will it fit in a paper column? Is text readable?
+        │
+        Fix by editing .tex or adjusting the template.
+        Re-compile, re-sense. Max 3 rounds.
         ↓
 Deliver: .tex + .pdf + .png + inspection summary
 ```
