@@ -1,53 +1,58 @@
-# tikz-figure-skill v3.2
+# tikz-figure-skill v3.3
 
-A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams. Template-first always. Engine is quality inspector, not generator.
+A Claude Code skill for publication-ready LaTeX/TikZ diagrams. Template-first. AI-driven inspection loop.
 
-## How It Works
+## Workflow
 
 ```
 User describes diagram
-        ↓
-  ① Template Match (187 verified templates, 4 sources)
-     └─ grep keywords → list matches
-        ↓
-  ├─ FULL MATCH → use directly (change text/colors)
-  ├─ PARTIAL MATCH → adapt: rename labels, add/remove layers, stitch parts
-  └─ STILL NO MATCH → extract structural skeleton from closest template,
-      rebuild content around it. Only as absolute last resort generate
-      from scratch.
-        ↓
-  ② Compile (pdflatex)
-        ↓
-  ③ Quality Inspection (MANDATORY, AI-driven, not hardcoded)
-     ├─ tikz-validator.py (11 checks): overflow, collision, gaps, Bezier, edges
-     └─ pdf-overlap-checker.py: text overlap, line crossing, off-center
-        ↓
-  ④ AI reads inspection report → intelligently fixes issues
-     No hardcoded auto-fix. Claude understands the problem and decides.
-     - Oversized box? Reduce minimum_width or adjust text.
-     - Title off-center? Recompute x position.
-     - Overlapping nodes? Adjust spacing or re-route edges.
-     - 3 layers → 4 layers broke layout? Add row, recompute y positions.
-     Re-compile, re-inspect. Max 3 rounds.
-        ↓
-  ⑤ Deliver: .tex + .pdf + .png + inspection summary
+    ↓
+① Template match (187 verified templates, 4 sources)
+   Full match → use directly
+   Partial → adapt, stitch, merge
+   ↓
+② Compile (pdflatex)
+   ↓
+③ Inspect (one command, 15 checks, all WARN)
+   python references/inspect.py output.tex output.pdf
+   ↓
+④ Model judges each WARN:
+   Template-inherited? → SKIP (design intent)
+   Adapted/added?    → FIX
+   ↓
+Deliver: .tex + .pdf + .png + inspection report
 ```
 
-## What Makes This Different
-
-- **Template-first, always.** 187 human-reviewed TikZ templates from 4 proven sources. The engine does NOT generate diagrams — it only inspects quality.
-- **AI-driven inspection loop.** Validator finds issues. Claude reads the report, understands the root cause, and fixes it intelligently. No hardcoded auto-fixer.
-- **Quality, not quantity.** 187 templates kept from 402 — only academic-grade sources retained (janosh 488*, PetarV- 1.4K*, NNTikZ 70*, pgf-umlsd CTAN).
-- **All parameters configurable.** Every spacing, color, and font exposed for override. Sensible defaults.
-
-## Template Library
+## Template Library (187 verified)
 
 | Source | Stars | Count | Covers |
 |--------|-------|-------|--------|
 | janosh/diagrams | 488 | 111 | Physics, chemistry, ML concepts |
-| PetarV-/TikZ | 1.4K | 43 | GNN, GAN, CNN, RL, graphs, networks |
+| PetarV-/TikZ | 1.4K | 43 | GNN, GAN, CNN, RL, graphs |
 | pgf-umlsd | CTAN | 22 | UML sequence diagrams |
-| NNTikZ + custom | 70 | 11 | Transformer, LSTM, GRU, RNN, CAX-Agent |
+| NNTikZ + custom | 70 | 11 | Transformer, LSTM, GRU, CAX-Agent |
+
+## Inspection (15 checks, all relative to image diagonal)
+
+| # | Check | Threshold |
+|---|-------|-----------|
+| 1 | collision | D × 0.5% |
+| 2 | overflow | D × 1% |
+| 3 | edge-clip | D × 2% |
+| 4 | tight-clearance | D × 1% |
+| 5 | oversize | > 3× text |
+| 6 | text-overlap | IoU > 3% |
+| 7 | text-overflow | D × 0.15% |
+| 8 | off-center | margin ratio > 4:1 |
+| 9 | text-line | D × 0.15% |
+| 10 | line-crossing | segment > D × 1.5% |
+| 11 | aspect-ratio | > 4:1 |
+| 12 | content-density | < 1.5% |
+| 13 | orphan-nodes | any found |
+| 14 | layout-balance | skew > 50% |
+| 15 | font-scaling | < D × 0.4% |
+
+All WARN. Model decides. Zero absolute thresholds.
 
 ## Install
 
@@ -56,20 +61,6 @@ git clone https://github.com/haiyichen001/tikz-figure-skill.git \
   ~/.claude/skills/tikz-figure-skill
 ```
 
-## Quality Inspection Tools
+## Credits
 
-| Tool | Runs | Checks |
-|------|------|--------|
-| `tikz-validator.py` | Pre-compile | Micro-slopes, direction reversal, container overflow, label collision, arrow length, Bezier arc, label gaps, edge clipping, boundary clearance, line crossings, oversize nodes |
-| `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, content centering, text-line intersection, line crossings |
-
-Both tools report to Claude — the AI decides what to fix and how. No Python auto-fix loop.
-
-## Requirements
-
-- LaTeX distribution (MiKTeX / TeX Live / MacTeX)
-- Python 3.10+ (optional: `pdfplumber`, `pymupdf`)
-
-## License
-
-MIT
+Templates: janosh, PetarV-, pgf-umlsd, NNTikZ. Validation: MixtapeTools. Built on thesis-figure-skill. MIT.
