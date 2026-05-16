@@ -48,14 +48,12 @@ STEP 1 — Template Match (ALWAYS first, never skip):
         ↓
 STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
-STEP 3 — Quality Sensors (MANDATORY, output only WARN — never auto-fix):
-        python references/tikz-validator.py output.tex        (5 interference checks)
-        python references/pdf-overlap-checker.py output.pdf    (PDF check)
-        python references/quality-report.py output.tex output.pdf
+STEP 3 — Quality Inspection (MANDATORY, one command, 15 checks, all WARN):
+        python references/inspect.py output.tex output.pdf
         ↓
-        ALL THREE output only WARN. No ERROR, no INFO, no PASS/FAIL.
-        Single level: "WARN — model decides."
-        They NEVER modify anything. They report to YOU (the model).
+        Runs 3 sensors — 15 checks total. Single unified report.
+        All findings are WARN. No ERROR, no INFO, no PASS/FAIL.
+        Never modifies anything. Feeds YOU (the model).
         ↓
 STEP 4 — Model Decides (strict — fix as much as possible):
         Read all 3 reports. Default is to FIX, not to skip.
@@ -95,13 +93,19 @@ Deliver: .tex + .pdf + .png + inspection summary
 - Memes, social media banners
 - Data analysis without visualization
 
-## Quality Inspection (engine role — never generates)
+## Quality Inspection (one command, 15 checks)
 
-| Tool | When | Checks |
-|------|------|--------|
-| `tikz-validator.py` | Pre-compile | 5 interference checks: collision, overflow, edge-clip, tight-clearance, oversize |
-| `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, off-center, line crossing, text-line intersection |
-| `quality-report.py` | Post-compile | Aspect ratio, content density, orphan nodes, layout balance, font scaling |
+```
+python references/inspect.py output.tex output.pdf
+```
+
+| Sensor | Checks |
+|--------|--------|
+| Interference | collision, overflow, edge-clip, tight-clearance, oversize |
+| PDF | text overlap, text overflow, off-center, text-line intersection, line crossing |
+| Layout | aspect ratio, content density, orphan nodes, balance, font scaling |
+
+All findings are WARN. Model decides. Never modifies anything.
 
 ## Template Library (187 verified, 4 sources)
 
@@ -115,6 +119,7 @@ Deliver: .tex + .pdf + .png + inspection summary
 ## Reference Loading Index
 
 Core tools (shared by sensor suite):
+- `references/inspect.py` — unified inspector: one command, 15 checks, all WARN
 - `references/tikz_parser.py` — shared .tex parser
 - `references/tikz-validator.py` — pre-compile 5 interference checks (sensor)
 - `references/pdf-overlap-checker.py` — post-compile PDF check (sensor)
