@@ -1,150 +1,104 @@
 #!/usr/bin/env python3
 """
-Environment check for tikz-figure-skill.
-Detects platform, LaTeX distro, Python deps, and outputs install commands.
+tikz-figure-skill environment check + auto-install.
+Detects platform, LaTeX, Python deps. Auto-installs what it can.
+Run once on skill startup.
 
 Usage: python scripts/check-env.py
-Exit: 0=all OK, 1=missing optional, 2=missing required
+Exit: 0=ready, 1=issues, 2=missing LaTeX (will not work)
 """
 
-import os
-import sys
-import shutil
-import subprocess
-import platform as plat
+import os, sys, shutil, subprocess, platform as plat
 
-REQUIRED_PY_PKGS = []  # core Python: no extras needed
-OPTIONAL_PY_PKGS = {
-    "pdfplumber": "pip install pdfplumber",
-    "fitz": "pip install pymupdf",  # PyMuPDF
-    "PIL": "pip install Pillow",
+REQUIRED_LATEX = ["pdflatex"]
+
+PY_DEPS = {
+    "fitz": "pymupdf",        # PDF to PNG
+    "pdfplumber": "pdfplumber",  # PDF overlap check
+    "PIL": "Pillow",          # Image analysis
 }
-LATEX_CMDS = ["pdflatex", "lualatex", "xelatex"]
-PDF_TO_PNG_CMDS = ["pdftoppm", "gs", "magick", "convert"]
+
+LATEX_PKGS = [
+    "standalone", "tikz", "amsmath", "amssymb",
+    "graphicx", "xcolor", "booktabs", "pgfplots",
+]
 
 IS_WIN = plat.system() == "Windows"
 IS_MAC = plat.system() == "Darwin"
-IS_LINUX = plat.system() == "Linux"
 
-class Color:
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    RESET = "\033[0m"
-    BOLD = "\033[1m"
+C_RED, C_GRN, C_YEL, C_RST = ("","","","") if IS_WIN else ("\033[91m","\033[92m","\033[93m","\033[0m")
 
-if IS_WIN:
-    Color.RED = Color.GREEN = Color.YELLOW = Color.RESET = Color.BOLD = ""
+def cmd_ok(name): return shutil.which(name) is not None
 
+def pkg_ok(name):
+    try: __import__(name); return True
+    except: return False
 
-def check_cmd(name: str) -> bool:
-    return shutil.which(name) is not None
+def latex_hint():
+    if IS_MAC: return "brew install --cask mactex-no-gui"
+    if IS_WIN: return "winget install MiKTeX.MiKTeX  or  https://miktex.org/download"
+    return "sudo apt install texlive-latex-recommended"
 
-
-def check_py_pkg(import_name: str) -> bool:
+def check_kpse(pkg):
     try:
-        __import__(import_name)
-        return True
-    except ImportError:
-        return False
-
-
-def find_latex() -> list[str]:
-    """Find available LaTeX engines."""
-    found = []
-    for cmd in LATEX_CMDS:
-        if check_cmd(cmd):
-            found.append(cmd)
-    return found
-
-
-def install_hint_latex() -> str:
-    if IS_MAC:
-        return "brew install --cask mactex-no-gui"
-    elif IS_LINUX:
-        return "sudo apt install texlive-full  # or texlive-latex-recommended for minimal"
-    else:
-        return "Install MiKTeX from https://miktex.org/download or run: winget install MiKTeX.MiKTeX"
-
-
-def install_hint_pdftoppm() -> str:
-    if IS_MAC:
-        return "brew install poppler"
-    elif IS_LINUX:
-        return "sudo apt install poppler-utils"
-    else:
-        return "Install poppler from https://github.com/oschwartz10612/poppler-windows/releases"
-
+        r = subprocess.run(["kpsewhich", f"{pkg}.sty"], capture_output=True, text=True, timeout=10)
+        return r.returncode == 0 and r.stdout.strip() != ""
+    except: return False
 
 def main():
-    issues = 0
-    errors = 0
-
-    print(f"{Color.BOLD}=== tikz-figure-skill Environment Check ==={Color.RESET}")
+    errs = 0; warns = 0
+    print(f"{C_YEL}=== tikz-figure-skill Setup ==={C_RST}")
     print(f"Platform: {plat.system()} {plat.release()}")
-    print(f"Python: {sys.version.split()[0]}")
     print()
 
-    # 1. LaTeX
-    latex = find_latex()
+    # 1. LaTeX — dealbreaker
+    latex = [c for c in REQUIRED_LATEX if cmd_ok(c)]
     if not latex:
-        print(f"{Color.RED}[MISSING] No LaTeX engine found.{Color.RESET}")
-        print(f"  Install: {install_hint_latex()}")
-        errors += 1
-    else:
-        print(f"{Color.GREEN}[OK] LaTeX engines: {', '.join(latex)}{Color.RESET}")
+        print(f"{C_RED}[MISSING] No LaTeX engine. This skill will not work.{C_RST}")
+        print(f"  Install: {latex_hint()}")
+        sys.exit(2)
+    print(f"{C_GRN}[OK]{C_RST} LaTeX: {', '.join(latex)}")
 
-    # 2. PDF to PNG
-    png_tool = None
-    for cmd in PDF_TO_PNG_CMDS:
-        if check_cmd(cmd):
-            png_tool = cmd
-            break
-    if png_tool:
-        print(f"{Color.GREEN}[OK] PDF-to-PNG: {png_tool}{Color.RESET}")
-    else:
-        print(f"{Color.YELLOW}[WARN] No PDF-to-PNG tool. PNG preview unavailable.{Color.RESET}")
-        print(f"  Install: {install_hint_pdftoppm()}")
-        issues += 1
-
-    # 3. Python packages
-    for pkg, install_cmd in OPTIONAL_PY_PKGS.items():
-        if check_py_pkg(pkg):
-            print(f"{Color.GREEN}[OK] Python: {pkg}{Color.RESET}")
+    # 2. LaTeX packages — check kpsewhich first
+    if cmd_ok("kpsewhich"):
+        missing = [p for p in LATEX_PKGS if not check_kpse(p)]
+        if missing:
+            print(f"{C_YEL}[WARN]{C_RST} LaTeX packages missing: {', '.join(missing)}")
+            print(f"  pdflatex will auto-install them on first use (MiKTeX) or run: tlmgr install {' '.join(missing)}")
+            warns += 1
         else:
-            print(f"{Color.YELLOW}[WARN] Python: {pkg} missing. Run: {install_cmd}{Color.RESET}")
-            issues += 1
-
-    # 4. CJK font check (quick heuristic)
-    if not IS_WIN:
-        # Check for common CJK fonts on Unix
-        try:
-            result = subprocess.run(
-                ["fc-list", ":lang=zh"], capture_output=True, text=True, timeout=5
-            )
-            if result.stdout.strip():
-                print(f"{Color.GREEN}[OK] CJK fonts available{Color.RESET}")
-            else:
-                print(f"{Color.YELLOW}[WARN] No CJK fonts detected (Chinese labels may fail){Color.RESET}")
-                issues += 1
-        except Exception:
-            pass
+            print(f"{C_GRN}[OK]{C_RST} LaTeX packages: all found")
     else:
-        print(f"{Color.GREEN}[OK] CJK fonts: Windows (assumed available){Color.RESET}")
+        print(f"{C_GRN}[OK]{C_RST} LaTeX packages: will auto-install on first compile")
+
+    # 3. Python deps — auto-install
+    for imp, pip_name in PY_DEPS.items():
+        if pkg_ok(imp):
+            print(f"{C_GRN}[OK]{C_RST} Python: {pip_name}")
+        else:
+            print(f"{C_YEL}[INSTALL]{C_RST} Python: {pip_name} ...", end=" ", flush=True)
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", pip_name, "-q"],
+                              capture_output=True, timeout=60)
+                if pkg_ok(imp):
+                    print(f"{C_GRN}OK{C_RST}")
+                else:
+                    print(f"{C_RED}FAILED{C_RST}")
+                    errs += 1
+            except:
+                print(f"{C_RED}FAILED (run: pip install {pip_name}){C_RST}")
+                errs += 1
 
     # Summary
     print()
-    print(f"{Color.BOLD}=== Summary ==={Color.RESET}")
-    if errors == 0 and issues == 0:
-        print(f"{Color.GREEN}All checks passed. Ready to generate figures.{Color.RESET}")
-        sys.exit(0)
-    elif errors == 0:
-        print(f"{Color.YELLOW}{issues} warning(s). Figures can be generated but some features limited.{Color.RESET}")
-        sys.exit(1)
+    print(f"{C_YEL}=== Summary ==={C_RST}")
+    if errs == 0 and warns == 0:
+        print(f"{C_GRN}All checks passed. Ready.{C_RST}")
+    elif errs == 0:
+        print(f"{C_YEL}{warns} warning(s) — skill works, some features limited.{C_RST}")
     else:
-        print(f"{Color.RED}{errors} error(s), {issues} warning(s). Fix errors first.{Color.RESET}")
-        sys.exit(2)
-
+        print(f"{C_RED}{errs} error(s) — fix before using.{C_RST}")
+    sys.exit(0 if errs == 0 else 1)
 
 if __name__ == "__main__":
     main()

@@ -29,6 +29,13 @@ context: fork
 
 Template-first always. Engine is quality inspector only — never generates diagrams.
 
+## Before Anything: Environment Setup
+
+On FIRST invocation, run: `python scripts/check-env.py`
+
+This auto-installs Python deps (pymupdf, pdfplumber, Pillow) and verifies
+pdflatex is available. Only LaTeX itself needs manual install (too large).
+
 ## Core Workflow (MANDATORY)
 
 ```
