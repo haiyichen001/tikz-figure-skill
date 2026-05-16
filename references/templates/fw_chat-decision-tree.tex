@@ -1,0 +1,91 @@
+% Decision Tree for conversation
+
+\documentclass[border=10pt,multi,tikz,dvipsnames,svgnames,rgb]{standalone}
+\usepackage[edges]{forest}
+\usetikzlibrary{arrows.meta}
+\forestset{
+  declare dimen register=gap,
+  gap'=10mm,
+  declare count register=twist,
+  twist'=2,
+  family tree/.style={
+    forked edges,
+    for tree={
+      rounded corners,
+      minimum width/.wrap pgfmath arg={##1}{(\textwidth-6*(gap))/3},
+      minimum height=4ex,
+      edge={-Latex},
+      font=\sffamily,
+      text centered,
+      % blur shadow,
+      edge=thick,
+    },
+    where={level()<(twist)}{%
+      parent anchor=children,
+      l sep+=10pt,
+      s sep'+=10pt,
+    }{%
+      folder,
+      grow'=0,
+      l sep'+=2pt,
+      if={level()==(twist)}{%
+        before typesetting nodes={child anchor=north},
+        !u.s sep'+=10pt,
+        edge path'={%
+          (!u.parent anchor) -- ++(0,-10pt) -| (.child anchor)
+        },
+      }{},
+    },
+  },
+  branch shade/.style args={from #1 to #2}{
+    before typesetting nodes={
+      tempcountc/.max={level}{current,tree},
+      tempcountb/.option=level,
+      tempcounta=(tempcountc)-(tempcountb)+1,
+      temptoksa/.option=name,
+      TeX/.wrap pgfmath arg={
+        \colorlet{##1col1}{#1}
+        \colorlet{##1col2}{#2}
+      }{name()},
+      for tree={
+        rounded corners,
+        top color/.wrap 2 pgfmath args={##2col2!##1!##2col1}{100*((level()-(tempcountb))/(tempcounta))}{(temptoksa)},
+        +edge/.wrap 2 pgfmath args={##2col2!##1!##2col1}{100*((level()-(tempcountb))/(tempcounta))}{(temptoksa)},
+        bottom color/.wrap 2 pgfmath args={##2col2!##1!##2col1}{100*((level()-(tempcountb)+1)/(tempcounta))}{(temptoksa)},
+        draw/.wrap 2 pgfmath args={##2col2!##1!##2col1}{100*((level()-(tempcountb)+1)/(tempcounta))}{(temptoksa)},
+        thick,
+      },
+    }
+  },
+}
+\begin{document}
+\begin{forest}
+  family tree,
+   [Chatbot, left color=cyan, right color=SpringGreen, middle color=Pink, draw=Silver
+     [Resume, branch shade=from cyan to blue
+       [Co-op
+         [ENGR 001 \& 002
+         	[ENGR 003 \& 004]
+         ]
+       ]
+       [Github
+       	 [Projects]
+       	 [Academic]
+       ]
+     ]
+     [Education, branch shade=from Pink to WildStrawberry
+       [UVIC
+         [SENG]
+         [CENG]
+       ]
+     ]
+     [Personal, branch shade=from SpringGreen to ForestGreen
+       [Blockchain
+         [Ethereum]
+         [Hashgraph]
+       ]
+     ]
+   ]
+\end{forest}
+
+\end{document}
