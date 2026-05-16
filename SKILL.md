@@ -48,35 +48,34 @@ STEP 1 — Template Match (ALWAYS first, never skip):
         ↓
 STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
-STEP 3 — Quality Inspection (MANDATORY, one command, 15 checks, all WARN):
+STEP 3 — Inspection (one command, 15 checks, all WARN):
         python references/inspect.py output.tex output.pdf
         ↓
-        Runs 3 sensors — 15 checks total. Single unified report.
-        All findings are WARN. No ERROR, no INFO, no PASS/FAIL.
-        Never modifies anything. Feeds YOU (the model).
+        All 15 checks output WARN only. No ERROR, no PASS/FAIL.
+        Never modifies anything. Reports to YOU (the model).
         ↓
-STEP 4 — Model Decides (strict — fix as much as possible):
-        Read all 3 reports. Default is to FIX, not to skip.
-        For each WARN, ask: can this be improved without breaking
-        the diagram's structure? If yes, fix it.
-        Only skip when: intentional design (tight stack, curved arrow),
-        or fixing would break the template's layout.
+STEP 4 — Model Judges Each WARN (template-first mindset):
+        For EVERY WARN, go back to the original template and ask:
+        "Was this in the template before I touched it?"
         │
-        Quality dimensions the model evaluates:
-        │  Layout: aspect ratio, balance, orphans, content density
-        │  Spacing: collision, overflow, edge clip, tight clearance  
-        │  Semantics: do inputs/outputs connect? Are labels clear?
-        │  Usability: will it fit in a paper column? Is text readable?
+        ├─ YES, it's template design intent → SKIP.
+        │     Examples: curved residual arrows crossing lines,
+        │     tightly stacked ladder steps, long cross-layer arrows,
+        │     feedback loops creating line crossings.
+        │     These are WHY the template looks good. Don't ruin them.
+        │
+        └─ NO, it appeared after my edits → FIX.
+              Examples: label got longer and overflowed the zone,
+              added a layer and nodes now collide,
+              changed text and box is now way too wide.
+              These are adaptation bugs. Fix them.
+        │
+        The goal is zero WARNs from adaptation.
+        Template-inherited WARNs are acceptable — the human designer
+        chose them intentionally.
         │
         Fix by editing .tex or adjusting template coordinates.
-        Re-compile, re-sense. Max 3 rounds.
-        ↓
-STEP 5 — MANDATORY Fix Loop (at least 1 round):
-        After first compile + sensors, you MUST find and fix at least
-        one WARN before delivering. Even if all warnings seem minor,
-        pick the most impactful one and fix it.
-        Re-compile → re-sense → if warnings remain, decide again.
-        Deliver only after at least 1 fix round completed.
+        Re-compile, re-inspect. Max 3 rounds.
         ↓
 Deliver: .tex + .pdf + .png + inspection summary
 ```
