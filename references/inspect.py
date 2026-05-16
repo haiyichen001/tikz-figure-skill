@@ -36,34 +36,18 @@ def main():
     print(f"Quality Inspection: {tex}")
     print(f"{'='*60}")
 
-    # 1. Pre-compile: interference checks
-    print("\n--- Sensor 1: tikz-validator (interference) ---")
     r1 = run_sensor("tikz-validator.py", tex)
-
-    # 2. Post-compile: PDF overlap
-    if pdf:
-        print("\n--- Sensor 2: pdf-overlap-checker (PDF) ---")
-        r2 = run_sensor("pdf-overlap-checker.py", pdf)
-    else:
-        r2 = []
-        print("  (no PDF — skip)")
-
-    # 3. Quality: aspect, density, balance, orphans, font
-    print("\n--- Sensor 3: quality-report (layout) ---")
+    r2 = run_sensor("pdf-overlap-checker.py", pdf) if pdf else []
     r3 = run_sensor("quality-report.py", tex, pdf) if pdf else run_sensor("quality-report.py", tex)
-
     all_warns = r1 + r2 + r3
 
-    # Unified report
     print(f"\n{'='*60}")
-    print(f"UNIFIED REPORT: {len(all_warns)} warnings total")
+    print(f"Inspection: {len(all_warns)} warnings")
     print(f"{'='*60}")
     for i, w in enumerate(all_warns, 1):
-        check = w.get("check","?")
-        msg = w.get("message","")
-        print(f"  {i}. [{check}] {msg}")
+        print(f"  {i}. [{w.get('check','?')}] {w.get('message','')}")
 
-    print(f"\nAll findings are WARN. Model decides what to fix.")
+    print(f"\nAll WARN. Model decides.")
     print(f"--- JSON ---")
     print(json.dumps(all_warns, indent=2))
 
