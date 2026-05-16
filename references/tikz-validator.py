@@ -421,25 +421,25 @@ def check_oversize_nodes(nodes: list[Node]) -> list[Issue]:
 # ─── Main ───
 
 def validate(filepath: str) -> list[Issue]:
+    """Interference checks only — 5 checks that actually break diagrams."""
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
     lines = content.split("\n")
 
     all_issues = []
-    all_issues.extend(check_micro_slopes(lines))
-    all_issues.extend(check_direction_reversal(lines))
     nodes = parse_nodes(lines)
     zones = parse_zones(lines)
-    if zones:
-        all_issues.extend(check_container_overflow(nodes, zones))
+    # 1. Boxes touching/overlapping
     if len(nodes) >= 2:
         all_issues.extend(check_label_collision(nodes))
-    all_issues.extend(check_short_arrows(lines, nodes))
-    all_issues.extend(check_bezier_collisions(lines, nodes))
-    all_issues.extend(check_label_gaps(lines, nodes))
+    # 2. Node outside its zone background
+    if zones:
+        all_issues.extend(check_container_overflow(nodes, zones))
+    # 3. Node too close to canvas edge
     all_issues.extend(check_edge_clipping(nodes, zones))
+    # 4. Nodes too close (<0.3cm)
     all_issues.extend(check_boundary_clearance(nodes))
-    all_issues.extend(check_line_crossings(lines))
+    # 5. Box size >> text size
     all_issues.extend(check_oversize_nodes(nodes))
     return all_issues
 

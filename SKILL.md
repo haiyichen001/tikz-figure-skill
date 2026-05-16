@@ -49,7 +49,7 @@ STEP 1 — Template Match (ALWAYS first, never skip):
 STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
 STEP 3 — Quality Sensors (MANDATORY, output only WARN — never auto-fix):
-        python references/tikz-validator.py output.tex        (11 checks)
+        python references/tikz-validator.py output.tex        (5 interference checks)
         python references/pdf-overlap-checker.py output.pdf    (PDF check)
         python references/quality-report.py output.tex output.pdf
         ↓
@@ -99,7 +99,7 @@ Deliver: .tex + .pdf + .png + inspection summary
 
 | Tool | When | Checks |
 |------|------|--------|
-| `tikz-validator.py` | Pre-compile | Micro-slopes, direction, overflow, collision, arrow length, Bezier, label gaps, edge clip, boundary clearance, line crossings, oversize |
+| `tikz-validator.py` | Pre-compile | 5 interference checks: collision, overflow, edge-clip, tight-clearance, oversize |
 | `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, off-center, line crossing, text-line intersection |
 | `quality-report.py` | Post-compile | Aspect ratio, content density, orphan nodes, layout balance, font scaling |
 
@@ -116,7 +116,7 @@ Deliver: .tex + .pdf + .png + inspection summary
 
 Core tools (shared by sensor suite):
 - `references/tikz_parser.py` — shared .tex parser
-- `references/tikz-validator.py` — pre-compile 11 checks (sensor)
+- `references/tikz-validator.py` — pre-compile 5 interference checks (sensor)
 - `references/pdf-overlap-checker.py` — post-compile PDF check (sensor)
 - `references/quality-report.py` — aspect/density/balance/orphans (sensor)
 - `references/layout-engine.py` — coordinate calculator (rare, engine fallback)
