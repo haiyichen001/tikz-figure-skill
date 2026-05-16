@@ -1,6 +1,6 @@
 ---
 name: tikz-figure-skill
-version: 3.0.1
+version: 3.1.0
 author: haiyichen
 description: |
   Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
@@ -57,7 +57,7 @@ STEP 1 — Template Match (MANDATORY — execute BEFORE anything else):
         ```
         grep -l -i "<keyword1>\|<keyword2>" references/templates/*.tex
         ```
-        Scan ALL 402 templates by keyword from the user's description.
+        Scan ALL 187 templates by keyword from the user's description.
         If zero matches, broaden keywords and try again.
         YOU MUST output a list of matched templates BEFORE proceeding.
         ↓
