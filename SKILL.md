@@ -1,6 +1,6 @@
 ---
 name: tikz-figure-skill
-version: 3.0.0
+version: 3.0.1
 author: haiyichen
 description: |
   Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
@@ -62,7 +62,11 @@ STEP 1 — Template Match: scan 402 templates in references/templates/
   │     e.g. GANTT template's time axis + Architecture template's block styles
   └─ NO MATCH → layout-engine.py with JSON spec (last resort)
         ↓
-STEP 2 — Compile: pdflatex (preferred, wider package compat) or lualatex
+STEP 2 — Compile: pdflatex (preferred) or lualatex.
+        ⚠ SERIAL ONLY. Before compiling, verify the .tex file exists
+        and has size > 0. Wait for all previous processes to finish.
+        Never run engine + pdflatex, or two pdflatex instances,
+        on the same output file simultaneously.
         ↓
 STEP 3 — Validate (MANDATORY for ALL diagrams, template or engine):
         python references/tikz-validator.py output.tex

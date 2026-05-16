@@ -1,4 +1,4 @@
-# tikz-figure-skill v3.0
+# tikz-figure-skill v3.0.1
 
 A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams. Template-first, engine-fallback, always validated.
 
