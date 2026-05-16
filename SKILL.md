@@ -1,6 +1,6 @@
 ---
 name: tikz-figure-skill
-version: 3.2.0
+version: 3.3.0
 author: haiyichen
 description: |
   Generate publication-ready LaTeX/TikZ diagrams. Template-first always.
@@ -48,28 +48,37 @@ STEP 1 — Template Match (ALWAYS first, never skip):
         ↓
 STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
-STEP 3 — Quality Sensors (MANDATORY, feed the model — never auto-fix):
-        python references/tikz-validator.py output.tex        (11 pre-compile checks)
-        python references/pdf-overlap-checker.py output.pdf    (post-compile PDF)
-        python references/quality-report.py output.tex output.pdf  (aspect ratio, density, balance, orphans)
+STEP 3 — Quality Sensors (MANDATORY, output only WARN — never auto-fix):
+        python references/tikz-validator.py output.tex        (11 checks)
+        python references/pdf-overlap-checker.py output.pdf    (PDF check)
+        python references/quality-report.py output.tex output.pdf
         ↓
-        ALL THREE are sensors only. They output ERROR / WARN / INFO.
+        ALL THREE output only WARN. No ERROR, no INFO, no PASS/FAIL.
+        Single level: "WARN — model decides."
         They NEVER modify anything. They report to YOU (the model).
         ↓
-STEP 4 — Model Decides (YOU read all 3 reports, YOU choose):
-        - ERROR: must fix. Overlap, unreadable text, nodes off-canvas.
-        - WARN: you judge. Wide aspect ratio? Normal for pipeline diagrams.
-          Sparse? Normal for simple architectures. Use context.
-        - INFO: FYI only. No action needed.
+STEP 4 — Model Decides (strict — fix as much as possible):
+        Read all 3 reports. Default is to FIX, not to skip.
+        For each WARN, ask: can this be improved without breaking
+        the diagram's structure? If yes, fix it.
+        Only skip when: intentional design (tight stack, curved arrow),
+        or fixing would break the template's layout.
         │
-        Quality checks the model applies (not hardcoded):
+        Quality dimensions the model evaluates:
         │  Layout: aspect ratio, balance, orphans, content density
-        │  Spacing: collision, overflow, edge clip, tight clearance
+        │  Spacing: collision, overflow, edge clip, tight clearance  
         │  Semantics: do inputs/outputs connect? Are labels clear?
         │  Usability: will it fit in a paper column? Is text readable?
         │
-        Fix by editing .tex or adjusting the template.
+        Fix by editing .tex or adjusting template coordinates.
         Re-compile, re-sense. Max 3 rounds.
+        ↓
+STEP 5 — MANDATORY Fix Loop (at least 1 round):
+        After first compile + sensors, you MUST find and fix at least
+        one WARN before delivering. Even if all warnings seem minor,
+        pick the most impactful one and fix it.
+        Re-compile → re-sense → if warnings remain, decide again.
+        Deliver only after at least 1 fix round completed.
         ↓
 Deliver: .tex + .pdf + .png + inspection summary
 ```

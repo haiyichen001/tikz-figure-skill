@@ -468,21 +468,16 @@ def main():
     print(f"TikZ Validator Report: {filepath}")
     print(f"{'='*60}")
 
-    if errors:
-        print(f"\nERROR ({len(errors)}) — must fix:")
-        for i, issue in enumerate(errors, 1):
+    all_warns = errors + warns
+    if all_warns:
+        print(f"\nWARN ({len(all_warns)}) — model decides:")
+        for i, issue in enumerate(all_warns, 1):
             loc = f"L{issue.line_no}" if issue.line_no else ""
             print(f"  {i}. [{issue.category}] {loc} {issue.message}")
 
-    if warns:
-        print(f"\nWARN ({len(warns)}) — recommended fix:")
-        for i, issue in enumerate(warns, 1):
-            loc = f"L{issue.line_no}" if issue.line_no else ""
-            print(f"  {i}. [{issue.category}] {loc} {issue.message}")
+    print(f"\nTotal: {len(all_warns)} warnings")
 
-    print(f"\nTotal: {len(errors)} errors, {len(warns)} warnings")
-
-    sys.exit(2 if errors else 1)
+    sys.exit(1 if all_warns else 0)
 
 
 if __name__ == "__main__":

@@ -477,27 +477,20 @@ def main():
         print("✅ PASS — 未发现重叠问题")
         sys.exit(0)
 
-    errors = [i for i in issues if i.level == "ERROR"]
-    warns = [i for i in issues if i.level == "WARN"]
+    all_issues = issues  # all findings are WARN — model decides
 
     print(f"{'=' * 60}")
     print(f"PDF 重叠检测报告: {filepath}")
     print(f"{'=' * 60}")
 
-    if errors:
-        print(f"\n🔴 错误 ({len(errors)} 个) — 必须修复:")
-        for i, issue in enumerate(errors, 1):
-            print(f"  {i}. [{issue.category}] {issue.message}")
-
-    if warns:
-        print(f"\n🟡 警告 ({len(warns)} 个) — 建议修复:")
-        for i, issue in enumerate(warns, 1):
-            print(f"  {i}. [{issue.category}] {issue.message}")
+    print(f"\nWARN ({len(all_issues)}) — model decides:")
+    for i, issue in enumerate(all_issues, 1):
+        print(f"  {i}. [{issue.category}] {issue.message}")
 
     print(f"\n{'=' * 60}")
-    print(f"总计: {len(errors)} 错误, {len(warns)} 警告")
+    print(f"Total: {len(all_issues)} warnings")
 
-    sys.exit(2 if errors else 1)
+    sys.exit(1 if all_issues else 0)
 
 
 if __name__ == "__main__":

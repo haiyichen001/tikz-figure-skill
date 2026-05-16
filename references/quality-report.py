@@ -54,7 +54,7 @@ def findings(tex_path, pdf_path=None):
                 "data":{"ratio":round(ratio,1),"width_pt":round(w_pt),"height_pt":round(h_pt),
                 "fits_single_col":w_pt <= single_col,"fits_double_col":w_pt <= double_col}})
         elif ratio > 2.5:
-            results.append({"level":"INFO","check":"aspect-ratio",
+            results.append({"level":"WARN","check":"aspect-ratio",
                 "message":f"Aspect ratio {ratio:.1f}:1 — moderately wide. Check if single column works.",
                 "data":{"ratio":round(ratio,1)}})
 
@@ -75,7 +75,7 @@ def findings(tex_path, pdf_path=None):
             for t in text_blocks:
                 content_area += (t[2]-t[0]) * (t[3]-t[1])
             density = content_area / total * 100 if total > 0 else 0
-            results.append({"level":"INFO","check":"content-density",
+            results.append({"level":"WARN","check":"content-density",
                 "message":f"Content fills {density:.1f}% of canvas.",
                 "data":{"density_pct":round(density,1)}})
             if density < 3:
@@ -113,7 +113,7 @@ def findings(tex_path, pdf_path=None):
                 results.append({"level":"WARN","check":"layout-balance",
                     "message":f"Layout imbalance: {left_count} nodes left, {right_count} right ({imbalance:.0f}% skew)."})
             elif imbalance > 25:
-                results.append({"level":"INFO","check":"layout-balance",
+                results.append({"level":"WARN","check":"layout-balance",
                     "message":f"Moderate imbalance: {left_count} left, {right_count} right ({imbalance:.0f}%)."})
     except: pass
 
