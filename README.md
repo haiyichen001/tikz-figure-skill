@@ -1,48 +1,53 @@
-# tikz-figure-skill v3.0.1
+# tikz-figure-skill v3.2
 
-A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams. Template-first, engine-fallback, always validated.
+A Claude Code skill that generates publication-ready LaTeX/TikZ diagrams. Template-first always. Engine is quality inspector, not generator.
 
 ## How It Works
 
 ```
 User describes diagram
         ↓
-  ① Template Match (402 templates from 6 libraries)
+  ① Template Match (187 verified templates, 4 sources)
+     └─ grep keywords → list matches
         ↓
-  ├─ Full match → use directly (customize colors/text)
-  ├─ Partial match → stitch 2+ templates together
-  └─ No match → layout-engine.py (JSON spec)
+  ├─ FULL MATCH → use directly (change text/colors)
+  ├─ PARTIAL MATCH → adapt: rename labels, add/remove layers, stitch parts
+  └─ STILL NO MATCH → extract structural skeleton from closest template,
+      rebuild content around it. Only as absolute last resort generate
+      from scratch.
         ↓
   ② Compile (pdflatex)
         ↓
-  ③ Validate (tikz-validator: 11 checks)
+  ③ Quality Inspection (MANDATORY, AI-driven, not hardcoded)
+     ├─ tikz-validator.py (11 checks): overflow, collision, gaps, Bezier, edges
+     └─ pdf-overlap-checker.py: text overlap, line crossing, off-center
         ↓
-  ④ PDF Overlap Check (pdf-overlap-checker)
+  ④ AI reads inspection report → intelligently fixes issues
+     No hardcoded auto-fix. Claude understands the problem and decides.
+     - Oversized box? Reduce minimum_width or adjust text.
+     - Title off-center? Recompute x position.
+     - Overlapping nodes? Adjust spacing or re-route edges.
+     - 3 layers → 4 layers broke layout? Add row, recompute y positions.
+     Re-compile, re-inspect. Max 3 rounds.
         ↓
-  ⑤ AI reads warnings → adjusts → re-compiles (max 3 rounds)
-        ↓
-  ⑥ Deliver: .tex + .pdf + .png
+  ⑤ Deliver: .tex + .pdf + .png + inspection summary
 ```
 
 ## What Makes This Different
 
-- **Template-first with intelligent stitching.** 402 human-reviewed TikZ templates matched by keyword. Partial matches get merged — take the encoder from Transformer, the decoder from Mamba. Only falls back to algorithmic layout as last resort.
-- **AI-driven validation loop.** Not a hardcoded auto-fixer. Claude reads validator output, understands the issues, and intelligently adjusts — because the skill is a system prompt that teaches the model how to use its tools.
-- **All config, no hardcode.** Every parameter (spacing, colors, fonts, zones) exposed through JSON spec with sensible defaults. User or AI can override anything.
-- **Cross-platform.** macOS, Linux, Windows. Auto-detects LaTeX distro, CJK fonts, Python deps.
+- **Template-first, always.** 187 human-reviewed TikZ templates from 4 proven sources. The engine does NOT generate diagrams — it only inspects quality.
+- **AI-driven inspection loop.** Validator finds issues. Claude reads the report, understands the root cause, and fixes it intelligently. No hardcoded auto-fixer.
+- **Quality, not quantity.** 187 templates kept from 402 — only academic-grade sources retained (janosh 488*, PetarV- 1.4K*, NNTikZ 70*, pgf-umlsd CTAN).
+- **All parameters configurable.** Every spacing, color, and font exposed for override. Sensible defaults.
 
 ## Template Library
 
-402 templates from 6 open-source libraries, MIT/GPL/CC licensed:
-
-| Source | Stars | Covers |
-|--------|-------|--------|
-| NNTikZ | 70 | Transformer, LSTM, GRU, RNN, Attention, Dropout |
-| PetarV-/TikZ | 1.4K | GNN, GAN, Autoencoder, CNN, CycleGAN, RL |
-| janosh/diagrams | 488 | Physics, Chemistry, ML concepts (111 figures) |
-| FriendlyUser/LatexDiagrams | 205 | Software architecture, circuits, flowcharts, Gantt |
-| andreas-bauer/TikZ | 17 | VM vs container, data poisoning, timelines |
-| pgf-umlsd | CTAN | UML sequence diagrams (22 examples) |
+| Source | Stars | Count | Covers |
+|--------|-------|-------|--------|
+| janosh/diagrams | 488 | 111 | Physics, chemistry, ML concepts |
+| PetarV-/TikZ | 1.4K | 43 | GNN, GAN, CNN, RL, graphs, networks |
+| pgf-umlsd | CTAN | 22 | UML sequence diagrams |
+| NNTikZ + custom | 70 | 11 | Transformer, LSTM, GRU, RNN, CAX-Agent |
 
 ## Install
 
@@ -51,59 +56,19 @@ git clone https://github.com/haiyichen001/tikz-figure-skill.git \
   ~/.claude/skills/tikz-figure-skill
 ```
 
-Restart Claude Code. `/tikz-figure-skill` is ready.
+## Quality Inspection Tools
 
-## Quick Start
-
-```
-/tikz-figure-skill Draw a Transformer encoder-decoder architecture
-/tikz-figure-skill Draw our company's 3-layer microservice deployment
-/tikz-figure-skill UML sequence diagram for user login flow
-```
-
-## Validation Pipeline
-
-All generated diagrams pass through:
-
-| Tool | When | Checks |
+| Tool | Runs | Checks |
 |------|------|--------|
-| `tikz-validator.py` | Pre-compile | 11 checks: micro-slopes, overflow, collision, Bezier, gaps, edge clip |
-| `pdf-overlap-checker.py` | Post-compile | Text overlap, line crossing, off-center, text-line intersection |
+| `tikz-validator.py` | Pre-compile | Micro-slopes, direction reversal, container overflow, label collision, arrow length, Bezier arc, label gaps, edge clipping, boundary clearance, line crossings, oversize nodes |
+| `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, content centering, text-line intersection, line crossings |
+
+Both tools report to Claude — the AI decides what to fix and how. No Python auto-fix loop.
 
 ## Requirements
 
 - LaTeX distribution (MiKTeX / TeX Live / MacTeX)
 - Python 3.10+ (optional: `pdfplumber`, `pymupdf`)
-
-## Structure
-
-```
-tikz-figure-skill/
-  SKILL.md                    -- Skill definition & workflow
-  README.md
-  install.sh / install.ps1
-  scripts/
-    check-env.py              -- Cross-platform dependency checker
-  references/
-    layout-engine.py          -- JSON spec → .tex generator (engine fallback)
-    tikz-validator.py         -- Pre-compile 11 checks
-    pdf-overlap-checker.py    -- Post-compile PDF overlap detector
-    figure-diff.py            -- SSIM comparison
-    tikz_parser.py            -- Shared .tex parser
-    tikz-coding-rules.md      -- Coding conventions
-    design-philosophy.md      -- Design principles
-    collision-detection.md    -- Bezier formulas, clearance tables
-    layout-patterns.md        -- Layout rules
-    visual-patterns.md        -- Drawing patterns
-    pgfplots-templates.md     -- CSV chart templates
-    graphdrawing-guide.md     -- LuaLaTeX layout guide
-    geometry-math.md          -- Coordinate systems
-    templates/                -- 402 flat templates (*.tex)
-```
-
-## Credits
-
-Templates: NNTikZ (fraserlove), PetarV-/TikZ, janosh/diagrams, FriendlyUser/LatexDiagrams, andreas-bauer/TikZ, pgf-umlsd. Validation: MixtapeTools (scunning1975). Built on thesis-figure-skill (0xE1337).
 
 ## License
 

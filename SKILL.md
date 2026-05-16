@@ -1,408 +1,151 @@
 ---
 name: tikz-figure-skill
-version: 3.1.0
+version: 3.2.0
 author: haiyichen
 description: |
-  Generate publication-ready LaTeX/TikZ diagrams with built-in collision detection,
-  PGFPlots data charts, and LuaLaTeX graphdrawing auto-layout. Zero-collision academic
-  figures by default.
+  Generate publication-ready LaTeX/TikZ diagrams. Template-first always.
+  Engine is quality inspector only — never generates diagrams.
 when_to_use: |
-  Use when the user explicitly asks to create a figure, diagram, chart, or illustration
-  for an academic paper, thesis, report, or publication. Triggers on: 画论文图, 画架构图,
-  画流程图, TikZ画图, 论文配图, tikz diagram, latex figure, 生成tikz, 技术路线图,
-  draw architecture diagram, make a figure for my paper, generate TikZ code, 画个图,
-  帮我画图, pgfplots chart from data, CSV to bar chart.
-  Do NOT trigger on: quick sketch, whiteboard doodle, "show me an example", general
-  questions about TikZ syntax (use WebSearch instead), or user explicitly wanting a
-  raster/bitmap tool like Photoshop/Figma/Canva.
+  Use when user asks to create a figure, diagram, chart, or illustration
+  for an academic paper, thesis, report, or publication. Triggers on: 画论文图,
+  画架构图, 画流程图, TikZ画图, 论文配图, tikz diagram, latex figure,
+  生成tikz, 技术路线图, draw architecture diagram, make a figure for my paper.
+  Do NOT trigger on: quick sketch, "show me an example", TikZ syntax questions,
+  raster/bitmap tools (Photoshop/Figma/Canva).
 allowed-tools:
   - Bash(pdflatex*)
   - Bash(lualatex*)
-  - Bash(xelatex*)
   - Bash(python*)
-  - Bash(pdftoppm*)
-  - Bash(gs*)
-  - Bash(magick*)
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - WebSearch
-  - WebFetch
-argument-hint: "[diagram description | --draft | --final | --data]"
+  - Read, Write, Edit, Grep, Glob
+  - WebSearch, WebFetch
+argument-hint: "[diagram description]"
 model: opus
-tags:
-  - tikz
-  - latex
-  - academic
-  - figure-generation
-  - pgfplots
-  - data-visualization
-  - collision-detection
+tags: [tikz, latex, academic, figure-generation, collision-detection]
 user-invocable: true
 context: fork
 ---
 
 # tikz-figure-skill
 
-Generate publication-quality LaTeX/TikZ diagrams. Template-first with intelligent stitching, engine fallback, always validated. Works cross-platform.
+Template-first always. Engine is quality inspector only — never generates diagrams.
 
-## Core Workflow (MANDATORY — follow this order)
+## Core Workflow (MANDATORY)
 
 ```
 User describes diagram
         ↓
-STEP 1 — Template Match (MANDATORY — execute BEFORE anything else):
-        ```
-        grep -l -i "<keyword1>\|<keyword2>" references/templates/*.tex
-        ```
-        Scan ALL 187 templates by keyword from the user's description.
-        If zero matches, broaden keywords and try again.
-        YOU MUST output a list of matched templates BEFORE proceeding.
+STEP 1 — Template Match (ALWAYS first, never skip):
+        grep -l -i "<keywords>" references/templates/*.tex
+        Output matched template list. If zero, broaden keywords.
         ↓
-  ├─ FULL MATCH (1+ templates cover entire diagram) → use directly.
-  │     Customize colors, labels, line widths. Compile. Done.
-  ├─ PARTIAL MATCH → stitch 2+ templates. Examples:
-  │     Transformer Encoder column + Mamba Decoder column → hybrid
-  │     GANTT time axis + Architecture block styles → timeline architecture
-  │     CI pipeline template + cloud-arch template → CI/CD architecture
-  └─ NO MATCH after keyword scan → layout-engine.py (LAST RESORT).
-        YOU MUST state "No template matched after scanning" before using engine.
+  ├─ FULL MATCH → copy template, edit labels/colors. Compile.
+  ├─ PARTIAL MATCH → adapt the closest template skeleton:
+  │     rename labels, add/remove nodes, adjust coordinates,
+  │     stitch parts from 2+ templates if needed.
+  │     If 3 layers → 4: insert new row, shift everything below.
+  └─ NO SIMILAR STRUCTURE → still use the most structurally similar
+        template as starting skeleton. Never generate from nothing.
         ↓
-STEP 2 — Compile: pdflatex (preferred) or lualatex.
-        ⚠ SERIAL ONLY. Before compiling, verify the .tex file exists
-        and has size > 0. Wait for all previous processes to finish.
-        Never run engine + pdflatex, or two pdflatex instances,
-        on the same output file simultaneously.
+STEP 2 — Compile: pdflatex. Serial only. Verify .tex exists and >0 bytes.
         ↓
-STEP 3 — Validate (MANDATORY for ALL diagrams, template or engine):
-        python references/tikz-validator.py output.tex
+STEP 3 — Quality Inspection (MANDATORY, AI-driven):
+        python references/tikz-validator.py output.tex    (11 pre-compile checks)
+        python references/pdf-overlap-checker.py output.pdf (post-compile)
         ↓
-STEP 4 — PDF Overlap Check (MANDATORY):
-        python references/pdf-overlap-checker.py output.pdf
+STEP 4 — AI-Driven Fix (YOU read the report, YOU decide):
+        The engine only reports problems. You understand and fix.
+        Template-adaptation issues to watch for:
+        - Text got longer → overflow, collision, oversize
+        - Layers added/removed → spacing collapse, arrow gaps
+        - Nodes added → line crossing, container overflow  
+        - Title adjusted → off-center, edge clip
+        Fix by editing .tex directly. Re-compile, re-inspect. Max 3 rounds.
         ↓
-STEP 5 — AI-Driven Fix Loop (YOU read warnings, YOU decide how to fix):
-        Read validator output. For each warning, apply an intelligent fix:
-        - short-arrow / collision → increase row_gap/column_gap in JSON,
-          or adjust node spacing in .tex
-        - overflow → expand zone padding
-        - bezier-collision → move label, reduce bend angle
-        - oversize → reduce minimum_width/height in style
-        - edge-clip → increase canvas.border
-        Re-compile, re-validate. Max 3 rounds.
-        ↓
-Deliver: .tex + .pdf + .png + validation summary
+Deliver: .tex + .pdf + .png + inspection summary
 ```
 
 ## When to Use
 
-- User explicitly asks to create a diagram, figure, chart, or illustration
-- The output is for a paper, thesis, report, slide deck, or publication
-- User provides a paper excerpt, data file (CSV), or architectural description
+- User asks to create a diagram, figure, chart, or illustration
+- Output is for a paper, thesis, report, or publication
 
 ## When NOT to Use
 
-- **Quick sketch / whiteboard doodle** — full validation pipeline is overkill
-- **"Show me an example of X"** — user is browsing, not requesting a figure
-- **General TikZ syntax questions** — use WebSearch
-- **Raster/bitmap tools** — user wants Photoshop, Figma, Canva
-- **Non-academic graphics** — memes, social media banners
-- **Data analysis without visualization** — user wants statistics, not charts
+- Quick sketches, browsing examples, TikZ syntax questions
+- Raster tools (Photoshop, Figma, Canva)
+- Memes, social media banners
+- Data analysis without visualization
 
-## Output Modes
+## Quality Inspection (engine role — never generates)
 
-| Mode | Trigger | Compile | Validate | Engine |
-|------|---------|---------|----------|--------|
-| `--draft` | Quick preview | 1 pass | Skip | pdflatex |
-| `--final` (default) | Production | 2 passes | Full 10 + PDF | **lualatex** (graphdrawing) |
-| `--data` | CSV charts | 1 pass | Data checks | pdflatex |
+| Tool | When | Checks |
+|------|------|--------|
+| `tikz-validator.py` | Pre-compile | Micro-slopes, direction, overflow, collision, arrow length, Bezier, label gaps, edge clip, boundary clearance, line crossings, oversize |
+| `pdf-overlap-checker.py` | Post-compile | Text overlap, text overflow, off-center, line crossing, text-line intersection |
 
-Default engine is **lualatex** for automatic graphdrawing layout and edge routing. Falls back to pdflatex if lualatex unavailable (losing graphdrawing features).
+## Template Library (187 verified, 4 sources)
 
-## Environment Check (auto-run on skill startup)
+| Source | Stars | Count | Covers |
+|--------|-------|-------|--------|
+| janosh/diagrams | 488 | 111 | Physics, chemistry, ML concepts |
+| PetarV-/TikZ | 1.4K | 43 | GNN, GAN, CNN, RL, graphs |
+| pgf-umlsd | CTAN | 22 | UML sequence diagrams |
+| NNTikZ + custom | 70 | 11 | Transformer, LSTM, GRU, RNN, CAX-Agent |
 
-Skill automatically runs `scripts/check-env.py` on first invocation. Reports: LaTeX engines found, PDF-to-PNG tool, Python deps, CJK fonts. Missing optional deps show install hints. Missing required deps (pdflatex) block skill execution.
+## Reference Loading Index
 
-Run manually: `python scripts/check-env.py`
+Core (always load):
+- `references/tikz-coding-rules.md` — coding conventions
+- `references/collision-detection.md` — Bezier formulas, clearance tables
+- `references/design-philosophy.md` — design principles
+- `references/visual-patterns.md` — drawing patterns
 
-## Core Workflow
+Layout-specific (pick one):
+- `references/layout-patterns.md` — architecture, pipeline, sequence
+- `references/geometry-math.md` — coordinate systems
 
-```
-User Input (text / sketch / paper excerpt)
-    ↓
-Step 1 — Analyze & Plan: identify domain, extract modules, plan layout, choose format
-    ↓
-Step 2 — Load References: match chart type → load template + collision rules + patterns
-    ↓
-Step 3 — Generate Code: TikZ `\graph` syntax `.tex`
-    ↓
-Step 3.5b — Pre-compile Validate: run tikz-validator.py (10 checks)
-    ↓
-Step 4 — Compile: lualatex (auto graphdrawing layout + edge routing)
-    ↓
-Step 5 — Post-compile Validate: run pdf-overlap-checker.py, render PNG, self-score
-    ↓
-Step 6 — Recover: if compile/validation fails, diagnose root cause, fix, re-run (max 3 retries)
-    ↓
-Deliver: .tex + .pdf + .png + QA report
-```
-
-## Auto-Retry & Recovery (AI-driven, not hardcoded)
-
-Compile errors and validation warnings are handled by Claude intelligently:
-
-### Compile Error Recovery
-1. **Parse compiler log** — extract error line, missing package, undefined command
-2. **Diagnose category**: missing package, syntax error, font issue, incompatible engine
-3. **Apply fix**: install package (`tlmgr install`), switch engine (pdflatex→lualatex), fix syntax
-4. **Re-compile** — max 3 attempts per error category
-5. **Escalate** — if 3 attempts fail, report exact error + attempted fixes to user
-
-### Validation Auto-Fix Loop (crucial)
-
-After generating .tex, YOU MUST run the validator and act on its output:
-
-```bash
-python references/tikz-validator.py output.tex
-```
-
-Read the validator output carefully. **Do not ignore warnings.** For each warning:
-
-| Warning Type | What Claude Should Do |
-|---|---|
-| `short-arrow` / `collision` / `tight-clearance` | Increase `row_gap` or `column_gap` in the JSON spec, or adjust node `x` positions in `groups`. Re-generate. |
-| `overflow` | Expand zone boundaries by adjusting group `x` spacing or increasing `column_gap`. |
-| `oversize` | Remove `minimum width`/`minimum height` from the style, or reduce to match text. |
-| `bezier-collision` / `line-crossing` | Re-route edges using `-|`/`|-` paths, or add intermediate rail nodes. |
-| `edge-clip` | Increase `canvas.border` or move nodes inward. |
-| `label-gap` | Shorten label text, move it above/below the edge, or widen the gap between source and target nodes. |
-
-**Loop**: generate → validate → read warnings → adjust spec → re-generate. Max 3 iterations. If warnings persist after 3 rounds, report them to the user but deliver the best version achieved.
-
-**Goal**: 0 errors, minimal warnings. This loop is what makes the skill "zero-collision" — it's Claude intelligently fixing issues the validator finds, not a hardcoded script.
-
-## Design Philosophy
-
-The full design philosophy is in `references/design-philosophy.md`. Core rules:
-
-- Think like a designer, not a programmer stacking code
-- Information density >= 30 visual elements
-- >= 3 levels of visual hierarchy (hero boxes >=5cm vs standard vs tiny)
-- >= 3 line types (thick data flow, solid control, dashed feedback)
-- Zone backgrounds with stage labels
-- Compact density — "just enough to breathe"
-
-## Collision Detection (10 checks, auto-run pre-compile)
-
-Loaded from `references/collision-detection.md`. Run manually:
-```bash
-python references/tikz-validator.py file.tex        # pre-compile
-python references/pdf-overlap-checker.py file.pdf   # post-compile
-```
-
-Checks: micro-slopes, direction reversal, container overflow, label collision, arrow length, **Bézier arc labels**, **label-to-gap fit**, **edge clipping**, **boundary clearance**, PDF text/line overlap.
-
-## PGFPlots Data Charts (6 templates)
-
-Loaded from `references/pgfplots-templates.md`. CSV → compilable chart. Templates: bar chart (`ybar`), line plot, scatter+error bars, groupplot (multi-panel), heatmap matrix, box plot. All use academic palette, enforce chart design rules (no chartjunk, grey grid, left-only axes).
-
-## Graphdrawing Auto-Layout
-
-Loaded from `references/graphdrawing-guide.md`. For diagrams with >15 nodes, switch to LuaLaTeX + graphdrawing. Algorithms: layered (hierarchical), spring (force-based), circular, tree. Edge routing auto-avoids nodes.
-
-Auto-switch rules:
-```
-if node_count <= 15:  lualatex, layered layout (simple)
-elif node_count <= 40: lualatex, layered layout (dense)
-else:                  lualatex, spring layout + edge routing
-```
-
-## Output Format
-
-Output is always standalone `.tex` with `\graph` syntax, compiled with lualatex.
-For data charts, output uses pgfplots (works with lualatex and pdflatex).
+Data-specific (optional):
+- `references/pgfplots-templates.md` — CSV-driven charts
+- `references/graphdrawing-guide.md` — LuaLaTeX layout
 
 ## Academic Color Scheme
 
 ```latex
-% Blues
 \definecolor{acaBlueLine}{HTML}{6080B0}   \definecolor{acaBlueFill}{HTML}{DBEAFE}
-% Greens
 \definecolor{acaGreenLine}{HTML}{30A060}  \definecolor{acaGreenFill}{HTML}{A0D0A0}
-% Oranges
 \definecolor{acaOrangeLine}{HTML}{D06020} \definecolor{acaOrangeFill}{HTML}{FFE6CC}
-% Purples
 \definecolor{acaPurpleLine}{HTML}{6020D0} \definecolor{acaPurpleFill}{HTML}{E1D5E7}
-% Reds
 \definecolor{acaRedLine}{HTML}{B05050}    \definecolor{acaRedFill}{HTML}{F8CECC}
-% Greys
 \definecolor{acaGreyLine}{HTML}{666666}   \definecolor{acaGreyFill}{HTML}{F5F5F5}
-% Zones
-\definecolor{zoneBlueBg}{HTML}{E8EEF8}    \definecolor{zoneGreenBg}{HTML}{ECFDF5}
-\definecolor{zoneRedBg}{HTML}{F8E8E8}
-```
-
-## Chart Type → Layout → File Map
-
-| Chart Type | Layout | Reference File |
-|------------|--------|---------------|
-| System architecture | Bottom-up layered | `references/layout-patterns.md` |
-| Protocol/flowchart | Left→right or top→down | `references/layout-patterns.md` |
-| Sequence diagram | Multi-column lifelines | `references/layout-patterns.md` |
-| 3-column mapping | Left-center-right | `references/layout-patterns.md` |
-| Geometry/math | Coordinate + geometric | `references/geometry-math.md` |
-| Embedded visualizations | TikZ-native plots | `references/visual-patterns.md` |
-| PGFPlots bar/line/scatter | CSV → `\addplot table` | `references/pgfplots-templates.md` |
-| Graphdrawing auto-layout | LuaLaTeX layered/spring/circular/tree | `references/graphdrawing-guide.md` |
-
-## Reference Loading Index
-
-All TikZ figures must load:
-- `references/collision-detection.md` — pre-compile collision rules + Bezier formulas
-- `references/tikz-coding-rules.md` — **Rule 0: always use graphdrawing `\graph` syntax. No manual coordinates.**
-- `references/visual-patterns.md` — reusable drawing patterns (>=3 per figure)
-- `references/design-philosophy.md` — design principles + quality gates
-
-Layout-specific (pick one):
-- `references/layout-patterns.md` — architecture, pipeline, sequence, 3-column mapping
-- `references/geometry-math.md` — coordinate systems, formula boxes
-
-Data-specific (optional):
-- `references/pgfplots-templates.md` — CSV-driven bar/line/scatter/heatmap/box plots
-- `references/graphdrawing-guide.md` — LuaLaTeX automatic layout
-
-## Built-in Templates (30 diagrams — bypass layout engine)
-
-Template library sourced from NNTikZ (70 stars, MIT) and PetarV-/TikZ (1.4K stars).
-Use directly when user requests canonical architectures. All use academic color scheme.
-
-| Template File | Diagram |
-|---|---|
-| `references/templates/transformer.tex` | Transformer Encoder-Decoder (Attention Is All You Need) |
-| `references/templates/multihead_attention.tex` | Multi-Head Attention mechanism detail |
-| `references/templates/hybrid_transformer_mamba.tex` | Hybrid: Transformer Encoder + Mamba Decoder |
-| `references/templates/encoder_only.tex` | Encoder-only Transformer (BERT-style) |
-| `references/templates/decoder_only.tex` | Decoder-only Transformer (GPT-style) |
-| `references/templates/rnn_encoder_decoder_sutskever.tex` | RNN Seq2Seq with Attention |
-| `references/templates/lstm.tex` | LSTM cell internal structure |
-| `references/templates/gru.tex` | GRU cell internal structure |
-| `references/templates/rnn.tex` | Recurrent Neural Network unrolled |
-| `references/templates/neural_network.tex` | Feedforward neural network |
-| `references/templates/dropout.tex` | Dropout regularization illustration |
-| `references/templates/gat_layer.tex` | Graph Attention Network layer |
-| `references/templates/2d_convolution.tex` | 2D Convolution operation |
-| `references/templates/convolutional_autoencoder.tex` | Convolutional Autoencoder |
-| `references/templates/cyclegan.tex` | CycleGAN architecture |
-| `references/templates/1d-2d_cross-connection.tex` | 1D-2D cross-connection |
-| `references/templates/bidirectional_long_short-term_memory.tex` | Bidirectional LSTM |
-| `references/templates/deep_belief_network.tex` | Deep Belief Network |
-| `references/templates/fully-connected_cross-connection.tex` | Fully-connected cross-connection |
-| `references/templates/cax_agent.tex` | CAX-Agent 3-layer agent harness architecture |
-| `references/templates/janosh_self-attention.tex` | Self-Attention mechanism (janosh, 115-fig collection) |
-| `references/templates/janosh_skip-connection.tex` | Skip/Residual connection illustration |
-| `references/templates/janosh_variational-autoencoder.tex` | Variational Autoencoder (VAE) |
-| `references/templates/janosh_random-forest.tex` | Random Forest ensemble diagram |
-| `references/templates/janosh_regular-vs-bayes-nn.tex` | Regular vs Bayesian Neural Network |
-| `references/templates/janosh_rnvp-affine-coupling-layer.tex` | Real NVP affine coupling layer |
-| `references/templates/janosh_single-head-attention.tex` | Single-Head Attention detail |
-| `references/templates/janosh_relation-space.tex` | Relation space / knowledge graph |
-| `references/templates/janosh_saddle-point.tex` | Saddle point optimization landscape |
-| `references/templates/janosh_tanh.tex` | Tanh activation function |
-
-Template sources: NNTikZ (70*, MIT), PetarV-/TikZ (1.4K*, MIT), janosh/diagrams (115 figs, MIT). Total: 200+ templates covering ML/DL, physics, chemistry, optimization, flowcharts.
-
-**When to use template vs layout engine:**
-Canonical architectures (Transformer, LSTM, CNN, GAN, VAE, etc.) → match template by keyword, customize colors/text. Custom pipeline/novel architecture → layout-engine.py with JSON spec.
-
-Core tools (all based on shared `references/tikz_parser.py`):
-- `references/layout-engine.py` — JSON spec → `.tex` generator (auto-run step 3)
-- `references/tikz-validator.py` — pre-compile 11 checks (auto-run step 4)
-- `references/pdf-overlap-checker.py` — post-compile PDF overlap (auto-run step 6)
-- `references/figure-diff.py` — SSIM comparison, triggered if reference image provided (step 6)
-
-## Quality Gates
-
-Self-score after PNG render. Minimum pass: no ERROR items, <= 3 WARN items. If 3 rounds of iteration don't pass, the layout approach itself is wrong — restart from Step 1.
-
-## Cross-Platform Notes
-
-| Platform | LaTeX | Font for CJK | PDF→PNG |
-|----------|-------|-------------|---------|
-| macOS | `pdflatex` (MacTeX) | PingFang SC | `pdftoppm` (poppler) |
-| Linux | `pdflatex` (TeX Live) | Noto Sans CJK SC | `pdftoppm` (poppler) |
-| Windows | `pdflatex` (MiKTeX) | SimHei / Microsoft YaHei | `pdftoppm` or `magick` |
-
-Python scripts use `python` or `python3` based on platform auto-detection. Paths use `os.path` or `/` which works cross-platform in modern tools.
-
-## Quick Compile Templates
-
-### Minimal standalone (graphdrawing)
-```latex
-\documentclass[tikz,border=15pt]{standalone}
-\usepackage{tikz,amsmath,amssymb}
-\usetikzlibrary{graphs,graphdrawing,arrows.meta}
-\usegdlibrary{layered}
-\begin{document}
-\begin{tikzpicture}[arr/.style={->,>=Stealth,thick,color=black!55}]
-% Style definitions
-\tikzset{box/.style={rectangle,rounded corners=4pt,align=center,
-    inner sep=8pt,font=\footnotesize\sffamily,draw=blue,fill=blue!10}}
-\graph[layered layout, grow=right,
-       level distance=2.5cm, sibling distance=1cm,
-       nodes={align=center,inner sep=6pt,font=\footnotesize\sffamily},
-       edges={arr}] {
-    input/"Input" [box] -> process/"Process" [box] -> output/"Output" [box];
-};
-\end{tikzpicture}
-\end{document}
-```
-
-### Minimal standalone PGFPlots (data chart)
-```latex
-\documentclass[tikz,border=10pt]{standalone}
-\usepackage{pgfplots}\pgfplotsset{compat=1.18}
-% Insert academic color definitions here
-\begin{document}
-\begin{tikzpicture}
-\begin{axis}[
-    width=8cm,height=5cm,ybar,bar width=0.6cm,
-    enlarge x limits=0.3,ymin=0,
-    grid=major,grid style={gray!25,dashed},axis lines=left,
-]
-\addplot[draw=acaBlueLine,fill=acaBlueFill!60] table[x expr=\coordindex,y=Value] {data.csv};
-\end{axis}
-\end{tikzpicture}
-\end{document}
 ```
 
 ## Project Structure
 
 ```
 tikz-figure-skill/
-  SKILL.md                          -- Main skill definition
-  scripts/
-    check-env.py                    -- Cross-platform dependency checker (auto-run)
+  SKILL.md                       -- Skill definition
+  README.md
+  install.sh / install.ps1
+  scripts/check-env.py           -- Dependency checker
   references/
-    tikz_parser.py                  -- Shared .tex parser (used by all tools)
-    tikz-validator.py               -- Pre-compile 10-check validator (auto-run)
-    layout-engine.py                -- JSON spec → \graph .tex generator
-    pdf-overlap-checker.py          -- Post-compile PDF overlap detector (auto-run)
-    figure-diff.py                  -- SSIM comparison (auto-run if reference exists)
-    design-philosophy.md            -- Core design principles + quality gates
-    tikz-coding-rules.md            -- Rule 0: graphdrawing syntax mandatory
-    layout-patterns.md              -- Sequence diagram style definitions
-    visual-patterns.md              -- 9 reusable drawing patterns + font rules
-    collision-detection.md          -- Bezier formulas, clearance tables
-    pgfplots-templates.md           -- 6 CSV-driven chart templates
-    graphdrawing-guide.md           -- LuaLaTeX auto-layout guide
-    geometry-math.md                -- Coordinate systems, formulas
+    tikz-validator.py            -- Pre-compile 11 checks (INSPECTOR)
+    pdf-overlap-checker.py       -- Post-compile PDF overlap (INSPECTOR)
+    figure-diff.py               -- SSIM comparison
+    tikz_parser.py               -- Shared .tex parser
+    layout-engine.py             -- Coordinate calculator (rarely used)
+    tikz-coding-rules.md         -- Coding conventions
+    design-philosophy.md         -- Design principles
+    collision-detection.md       -- Bezier formulas
+    layout-patterns.md           -- Layout rules
+    visual-patterns.md           -- Drawing patterns
+    pgfplots-templates.md        -- Data chart templates
+    graphdrawing-guide.md        -- LuaLaTeX guide
+    geometry-math.md             -- Coordinate systems
+    templates/                   -- 187 verified .tex templates
 ```
 
 ## Credits
 
-Built on [thesis-figure-skill](https://github.com/0xE1337/thesis-figure-skill) by 0xE1337.
-Collision detection rules from [MixtapeTools](https://github.com/scunning1975/MixtapeTools) by scunning1975.
-PGFPlots patterns from [TUGboat](https://tug.org/TUGboat/tb31-1/tb97wright-pgfplots.pdf) and [Overleaf guides](https://www.overleaf.com/learn/latex/Pgfplots_package).
-Graphdrawing from [TikZ/PGF manual](https://tikz.dev/gd).
+Templates: janosh/diagrams (488*), PetarV-/TikZ (1.4K*), NNTikZ (70*), pgf-umlsd (CTAN).
+Validation: MixtapeTools (scunning1975). Built on thesis-figure-skill (0xE1337).
 License: MIT
