@@ -90,14 +90,13 @@ def findings(tex_path, pdf_path=None):
                     "message":f"Balance skewed {skew:.0f}% ({left}L/{right}R)."})
     except: pass
 
-    # 5. Font scaling: relative to single-column paper width
-    if w_pt > 0:
-        single = 252  # pt
-        scale = single/w_pt if w_pt > single else 1.0
-        tiny = 5 * scale
-        if tiny < 4:
+    # 5. Font relative to image diagonal
+    if diag > 0:
+        # Tiny font (~5pt) as fraction of diagonal. < 0.4% is unreadable.
+        font_ratio = 5.0 / diag * 100  # tiny font as % of diagonal
+        if font_ratio < 0.4:
             results.append({"level":"WARN","check":"font-scaling",
-                "message":f"Scaled to single column, tiny text → {tiny:.1f}pt (<4pt unreadable)."})
+                "message":f"Tiny text is only {font_ratio:.2f}% of diagonal — likely unreadable."})
 
     return results
 
