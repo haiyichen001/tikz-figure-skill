@@ -42,8 +42,9 @@ On FIRST invocation:
    `SKILL_DIR/.venv/bin/python` (macOS/Linux) or `SKILL_DIR\.venv\Scripts\python` (Windows)
    Each Bash call spawns a fresh shell — absolute venv path is the only reliable way.
 
-3. Verify pdflatex exists: `which pdflatex` or `pdflatex --version`
-   If missing, user must install MiKTeX / TeX Live manually (too large to bundle).
+3. Verify pdflatex exists. If missing, YOU (Claude) help the user install it.
+   You know their OS, package manager, and preferences (conda, brew, apt, winget).
+   Use whatever method fits this specific user best — not a hardcoded command.
 
 ## Core Workflow (MANDATORY)
 
