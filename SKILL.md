@@ -31,20 +31,26 @@ Template-first always. Engine is quality inspector only — never generates diag
 
 ## Before Anything: Environment Setup
 
-On FIRST invocation:
+On FIRST invocation, check dependencies interactively:
 
-1. If `.venv/` does not exist in the skill directory, run setup:
-   `bash setup.sh` (macOS/Linux) or `.\setup.ps1` (Windows)
-   This creates a local venv and installs pymupdf, pdfplumber, Pillow inside it.
-   Zero system pollution.
+1. **Python packages** (pymupdf, pdfplumber, Pillow):
+   - Check if already available in current Python
+   - If not, ASK THE USER: "Install into skill directory (.venv/), or use system Python?"
+   - If .venv/: run `bash setup.sh` (macOS/Linux) or `.\setup.ps1` (Windows)
+   - Never install globally without asking
 
-2. For all Python commands, use the venv Python directly:
+2. **LaTeX engine** (pdflatex):
+   - Check if available
+   - If missing, tell user: "pdflatex not found. How would you like to install?"
+   - Suggest options based on their OS: conda, brew, apt, winget, manual download
+   - Let user choose method and location
+
+3. For all Python commands, use the venv Python directly if .venv/ exists:
    `SKILL_DIR/.venv/bin/python` (macOS/Linux) or `SKILL_DIR\.venv\Scripts\python` (Windows)
    Each Bash call spawns a fresh shell — absolute venv path is the only reliable way.
 
-3. Verify pdflatex exists. If missing, YOU (Claude) help the user install it.
-   You know their OS, package manager, and preferences (conda, brew, apt, winget).
-   Use whatever method fits this specific user best — not a hardcoded command.
+4. Report findings to user: "✓ pdflatex ready, ✓ Python deps ready in .venv/" or list what's missing.
+   User must explicitly approve any installation before it happens.
 
 ## Core Workflow (MANDATORY)
 
