@@ -31,10 +31,19 @@ Template-first always. Engine is quality inspector only — never generates diag
 
 ## Before Anything: Environment Setup
 
-On FIRST invocation, run: `python scripts/check-env.py`
+On FIRST invocation:
 
-This auto-installs Python deps (pymupdf, pdfplumber, Pillow) and verifies
-pdflatex is available. Only LaTeX itself needs manual install (too large).
+1. If `.venv/` does not exist in the skill directory, run setup:
+   `bash setup.sh` (macOS/Linux) or `.\setup.ps1` (Windows)
+   This creates a local venv and installs pymupdf, pdfplumber, Pillow inside it.
+   Zero system pollution.
+
+2. For all Python commands, use the venv Python directly:
+   `SKILL_DIR/.venv/bin/python` (macOS/Linux) or `SKILL_DIR\.venv\Scripts\python` (Windows)
+   Each Bash call spawns a fresh shell — absolute venv path is the only reliable way.
+
+3. Verify pdflatex exists: `which pdflatex` or `pdflatex --version`
+   If missing, user must install MiKTeX / TeX Live manually (too large to bundle).
 
 ## Core Workflow (MANDATORY)
 
